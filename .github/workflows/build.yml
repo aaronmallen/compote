@@ -77,7 +77,6 @@ jobs:
         feature:
           - env
           - json
-          - jsonc
           - toml
           - yaml
     steps:

@@ -6,17 +6,11 @@
 //! environment variable, which is only ever text, lands on a numeric field at the bottom of a
 //! three-level path.
 
-#![cfg(all(
-  feature = "env",
-  feature = "json",
-  feature = "jsonc",
-  feature = "toml",
-  feature = "yaml"
-))]
+#![cfg(all(feature = "env", feature = "json", feature = "toml", feature = "yaml"))]
 
 mod common;
 
-use ::compote::{Compote, Env, Json, Jsonc, Serialized, Toml, Yaml};
+use ::compote::{Compote, Env, Json, Serialized, Toml, Yaml};
 
 use crate::common::{
   Database, Feature, Level, Logging, Owner, Pool, Replica, Server, Settings, Target, Tls, fixture, map, strings,
@@ -45,7 +39,7 @@ fn stack() -> Settings {
   Compote::from(Serialized::defaults(Settings::default()))
     .merge(Toml::path(fixture("layered/base.toml")))
     .merge(Yaml::path(fixture("layered/environment.yaml")))
-    .merge(Jsonc::path(fixture("layered/local.jsonc")))
+    .merge(Json::path(fixture("layered/local.jsonc")))
     .merge(Json::path(fixture("layered/secrets.json")))
     .merge(Env::prefixed(PREFIX).ignore(&["CONFIG"]).split("__"))
     .extract()
@@ -215,7 +209,7 @@ mod compote {
 
     #[test]
     fn it_walks_outward_from_the_nearest_file_to_the_furthest() {
-      let settings: Settings = Compote::from(Jsonc::path(fixture("layered/local.jsonc")))
+      let settings: Settings = Compote::from(Json::path(fixture("layered/local.jsonc")))
         .join(Yaml::path(fixture("layered/environment.yaml")))
         .join(Toml::path(fixture("layered/base.toml")))
         .join(Serialized::defaults(Settings::default()))

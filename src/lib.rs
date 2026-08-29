@@ -49,11 +49,16 @@
 //!
 //! Each format sits behind a feature of the same name, and none are on by default.
 //!
+//! [`Json`] covers both spellings, since JSON with comments is a superset of JSON. Comments and
+//! trailing commas are allowed and nothing else is, so the extension decides nothing and a file that
+//! uses neither is still held to strict JSON. Say [`strict`](Json::strict) to refuse even those, or
+//! [`lenient`](Json::lenient) to take everything the parser knows, and name any single syntax to
+//! allow or deny it on its own.
+//!
 //! | Feature | Reads | Parser |
 //! | --- | --- | --- |
 //! | `env` | environment variables | |
-//! | `json` | `.json` | `serde_json` |
-//! | `jsonc` | `.jsonc`, JSON with comments and trailing commas | `jsonc-parser` |
+//! | `json` | `.json`, `.jsonc` | `jsonc-parser` |
 //! | `toml` | `.toml` | `toml_edit` |
 //! | `yaml` | `.yaml`, `.yml` | `yaml_serde` |
 #![warn(missing_docs)]
@@ -69,8 +74,6 @@ pub use error::{Error, Result};
 pub use provider::Env;
 #[cfg(feature = "json")]
 pub use provider::Json;
-#[cfg(feature = "jsonc")]
-pub use provider::Jsonc;
 #[cfg(feature = "toml")]
 pub use provider::Toml;
 #[cfg(feature = "yaml")]

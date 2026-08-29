@@ -1,3 +1,9 @@
+//! One provider, both spellings.
+//!
+//! `complete/config.json` and `complete/config.jsonc` describe the same configuration, one in strict
+//! JSON and one with comments and trailing commas. [`Json`] tells them apart by what they hold, so
+//! both land on the same typed value.
+
 #![cfg(feature = "json")]
 
 mod common;
@@ -5,6 +11,12 @@ mod common;
 use compote::{Compote, Json};
 
 use crate::common::{Settings, complete, fixture};
+
+fn commented() -> Settings {
+  Compote::from(Json::path(fixture("complete/config.jsonc")))
+    .extract()
+    .unwrap()
+}
 
 fn settings() -> Settings {
   Compote::from(Json::path(fixture("complete/config.json")))
@@ -84,6 +96,67 @@ mod json {
 
       assert!(error.to_string().starts_with("failed to read"), "{error}");
       assert!(error.to_string().contains("missing.json"), "{error}");
+    }
+  }
+
+  /// The same document, spelled with the syntax strict JSON does not have.
+  mod commented {
+    use pretty_assertions::assert_eq;
+
+    use super::*;
+
+    #[test]
+    fn it_reads_a_commented_document_the_same_as_plain_json() {
+      assert_eq!(commented(), complete());
+    }
+
+    #[test]
+    fn it_lands_on_the_same_value_as_the_plain_file_beside_it() {
+      assert_eq!(commented(), settings());
+    }
+
+    #[test]
+    fn it_reads_past_a_comment_before_the_opening_brace() {
+      assert_eq!(commented().name, "Compote — ünïcode ✓");
+    }
+
+    #[test]
+    fn it_allows_a_trailing_comma_in_an_object() {
+      let tls = commented().server.tls;
+
+      assert!(tls.enabled);
+      assert_eq!(tls.min_version.as_deref(), Some("1.3"));
+    }
+
+    #[test]
+    fn it_allows_a_trailing_comma_in_an_array() {
+      assert_eq!(
+        commented().server.tls.ciphers,
+        vec!["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"]
+      );
+    }
+
+    #[test]
+    fn it_allows_a_block_comment_between_nested_values() {
+      let replicas = commented().database.replicas;
+
+      assert_eq!(replicas.len(), 2);
+      assert_eq!(replicas[1].host, "replica-2.internal");
+    }
+
+    #[test]
+    fn it_reads_a_null_as_none() {
+      assert_eq!(commented().owners[1].email, None);
+    }
+
+    #[test]
+    fn it_reports_the_path_of_a_file_it_cannot_read() {
+      let error = Compote::from(Json::path(fixture("complete/missing.jsonc")))
+        .extract::<Settings>()
+        .unwrap_err();
+
+      assert!(error.to_string().starts_with("failed to read"), "{error}");
+      assert!(error.to_string().contains("missing.jsonc"), "{error}");
     }
   }
 }

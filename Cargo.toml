@@ -14,15 +14,13 @@ docs.rs = { all-features = true }
 
 [features]
 env = [] # Load configuration from env
-json = ["dep:serde_json"] # Load configuration from JSON files
-jsonc = ["dep:jsonc-parser", "dep:serde_json"] # Load configuration from JSONc files
+json = ["dep:jsonc-parser"] # Load configuration from JSON or JSONc files
 toml = ["dep:toml_edit"] # Load configuration from TOML files
 yaml = ["dep:yaml_serde"] # Load configuration from YAML files
 
 [dependencies]
 jsonc-parser = { features = ["serde"], optional = true, version = "0.33" }
 serde = { features = ["derive"], version = "1" }
-serde_json = { optional = true, version = "1" }
 thiserror = "2"
 toml_edit = { features = ["serde"], optional = true, version = "0.25" }
 yaml_serde = { optional = true, version = "0.10" }

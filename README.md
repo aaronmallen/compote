@@ -24,13 +24,23 @@ Every `merge` beats the one before it. Here the child file beats its parent, and
 
 Each format sits behind a feature of the same name. None are on by default, so you pay for what you read.
 
-| Feature | Reads                                            | Parser         |
-|---------|--------------------------------------------------|----------------|
-| `env`   | environment variables                            |                |
-| `json`  | `.json`                                          | `serde_json`   |
-| `jsonc` | `.jsonc`, JSON with comments and trailing commas | `jsonc-parser` |
-| `toml`  | `.toml`                                          | `toml_edit`    |
-| `yaml`  | `.yaml`, `.yml`                                  | `yaml_serde`   |
+| Feature | Reads                 | Parser                       |
+|---------|-----------------------|------------------------------|
+| `env`   | environment variables |                              |
+| `json`  | `.json`, `.jsonc`     | `jsonc-parser`               |
+| `toml`  | `.toml`               | `toml_edit`                  |
+| `yaml`  | `.yaml`, `.yml`       | `yaml_serde`                 |
+
+`Json` reads both spellings, since JSON with comments is a superset of JSON. Comments and trailing
+commas are allowed and nothing else is, so the extension decides nothing and a file that uses neither
+is still held to strict JSON. What it accepts is yours to set:
+
+```rust
+Json::path("config.json")                                             // JSON, comments, trailing commas
+Json::path("config.json").allow_hexadecimal_numbers().deny_comments() // the same, adjusted
+Json::path("config.json").strict()                                    // JSON and nothing else
+Json::path("config.json").lenient()                                   // everything the parser knows
+```
 
 ## Credits
 

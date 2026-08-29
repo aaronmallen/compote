@@ -2,8 +2,6 @@
 mod env;
 #[cfg(feature = "json")]
 mod json;
-#[cfg(feature = "jsonc")]
-mod jsonc;
 mod serialized;
 #[cfg(feature = "toml")]
 mod toml;
@@ -14,8 +12,6 @@ mod yaml;
 pub use env::Env;
 #[cfg(feature = "json")]
 pub use json::Json;
-#[cfg(feature = "jsonc")]
-pub use jsonc::Jsonc;
 pub use serialized::Serialized;
 #[cfg(feature = "toml")]
 pub use toml::Toml;
@@ -48,7 +44,7 @@ pub trait Provider {
   fn data(&self) -> Result<Value>;
 }
 
-#[cfg(any(feature = "json", feature = "jsonc", feature = "toml", feature = "yaml"))]
+#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
 fn load<E>(path: &std::path::Path, parse: impl FnOnce(&str) -> std::result::Result<Value, E>) -> Result<Value>
 where
   E: std::error::Error + Send + Sync + 'static,
