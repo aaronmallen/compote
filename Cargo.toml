@@ -1,0 +1,32 @@
+[package]
+categories = ["config", "encoding"]
+description = "Layered configuration. Merge files and environment variables into one typed value."
+edition = "2024"
+homepage = "https://github.com/aaronmallen/compote"
+keywords = ["config", "configuration", "env", "layered", "settings"]
+license = "MIT"
+name = "compote"
+repository = "https://github.com/aaronmallen/compote"
+version = "0.1.0"
+
+[package.metadata]
+docs.rs = { all-features = true }
+
+[features]
+env = [] # Load configuration from env
+json = ["dep:serde_json"] # Load configuration from JSON files
+jsonc = ["dep:jsonc-parser", "dep:serde_json"] # Load configuration from JSONc files
+toml = ["dep:toml_edit"] # Load configuration from TOML files
+yaml = ["dep:yaml_serde"] # Load configuration from YAML files
+
+[dependencies]
+jsonc-parser = { features = ["serde"], optional = true, version = "0.33" }
+serde = { features = ["derive"], version = "1" }
+serde_json = { optional = true, version = "1" }
+thiserror = "2"
+toml_edit = { features = ["serde"], optional = true, version = "0.25" }
+yaml_serde = { optional = true, version = "0.10" }
+
+[dev-dependencies]
+pretty_assertions = "1"
+tempfile = "3"

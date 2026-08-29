@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+#MISE description="Test rust code"
+#USAGE flag "--filter" help="Filter tests by name" {
+#USAGE   arg "<filter>"
+#USAGE }
+
+set -e
+
+set --
+
+if [ -n "${usage_filter:-}" ]; then
+	set -- "$@" --no-fail-fast --filter-expr "test(/${usage_filter}/)"
+fi
+
+cargo llvm-cov nextest --summary-only --all-features --no-tests pass "$@"
+cargo llvm-cov report --html --output-dir coverage/rust
+cargo llvm-cov report --cobertura --output-path coverage/rust/cobertura.xml

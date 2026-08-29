@@ -1,0 +1,79 @@
+//! Layered configuration.
+//!
+//! Compote reads configuration from files and the environment, merges it in the order you choose, and
+//! returns one typed value. You give it the sources. It does not go looking for them, so where your
+//! configuration lives, and which file wins, stays your decision.
+//!
+//! ```
+//! use std::collections::BTreeMap;
+//!
+//! use compote::{Compote, Serialized, Value};
+//! use serde::{Deserialize, Serialize};
+//!
+//! #[derive(Deserialize, Serialize)]
+//! struct Settings {
+//!   host: String,
+//!   port: u16,
+//! }
+//!
+//! impl Default for Settings {
+//!   fn default() -> Self {
+//!     Self { host: "127.0.0.1".to_owned(), port: 80 }
+//!   }
+//! }
+//!
+//! let from_file = Value::Table(BTreeMap::from([("port".to_owned(), Value::String("8080".to_owned()))]));
+//!
+//! let settings: Settings = Compote::from(Serialized::defaults(Settings::default()))
+//!   .merge(from_file)
+//!   .extract()
+//!   .unwrap();
+//!
+//! assert_eq!(settings.host, "127.0.0.1");
+//! assert_eq!(settings.port, 8080);
+//! ```
+//!
+//! # Order
+//!
+//! Every [`merge`](Compote::merge) beats the one before it. Every [`join`](Compote::join) fills a gap
+//! without taking a key that is already set, which is what you want when walking outward from the
+//! nearest configuration file to the furthest.
+//!
+//! # Coercion
+//!
+//! A string becomes whatever the field asks for, so `"8080"` fills a `u16` and `"yes"` fills a `bool`.
+//! It does not work the other way, so a number never quietly fills a `String` field and hides a
+//! mistake. This is what lets environment variables, which are always text, sit beside typed files.
+//!
+//! # Formats
+//!
+//! Each format sits behind a feature of the same name, and none are on by default.
+//!
+//! | Feature | Reads | Parser |
+//! | --- | --- | --- |
+//! | `env` | environment variables | |
+//! | `json` | `.json` | `serde_json` |
+//! | `jsonc` | `.jsonc`, JSON with comments and trailing commas | `jsonc-parser` |
+//! | `toml` | `.toml` | `toml_edit` |
+//! | `yaml` | `.yaml`, `.yml` | `yaml_serde` |
+#![warn(missing_docs)]
+
+mod compote;
+mod error;
+mod provider;
+mod value;
+
+pub use compote::Compote;
+pub use error::{Error, Result};
+#[cfg(feature = "env")]
+pub use provider::Env;
+#[cfg(feature = "json")]
+pub use provider::Json;
+#[cfg(feature = "jsonc")]
+pub use provider::Jsonc;
+#[cfg(feature = "toml")]
+pub use provider::Toml;
+#[cfg(feature = "yaml")]
+pub use provider::Yaml;
+pub use provider::{Provider, Serialized};
+pub use value::Value;

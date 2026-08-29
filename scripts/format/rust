@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+#MISE description="Format all rust files"
+#MISE alias=["fmt:rs", "fmt:rust", "format:rs"]
+
+set -e
+
+cargo sort --workspace --config .config/tomlfmt.toml
+cargo +nightly fmt --all -- --config-path .config/rustfmt.toml
+cargo clippy --fix --all-targets --all-features --allow-dirty --allow-staged --allow-no-vcs

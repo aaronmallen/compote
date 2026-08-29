@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+#MISE description="Lint all rust files"
+#MISE alias=["l:rs", "l:rust", "lint:rs"]
+
+set -e
+
+cargo sort --check --check-format --workspace --config .config/tomlfmt.toml
+cargo +nightly fmt --all --check -- --config-path .config/rustfmt.toml
+cargo clippy --all-targets --all-features -- -D warnings

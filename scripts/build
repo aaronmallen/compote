@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+#MISE description="Build rust crates"
+#USAGE flag "-p --package <package>" help="Build only the given package"
+#USAGE flag "-a --all-features" help="Build with all features enabled"
+
+set -e
+
+set --
+
+if [ -n "${usage_package:-}" ]; then
+	set -- "$@" --package "$usage_package"
+else
+	set -- "$@" --workspace
+fi
+
+if [ "${usage_all_features:-}" = "true" ]; then
+	set -- "$@" --all-features
+fi
+
+cargo build "$@"
