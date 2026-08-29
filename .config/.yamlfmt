@@ -4,6 +4,7 @@ exclude:
   - .mise-data
   - coverage
   - target
+  - tests/fixtures
   - tmp
 formatter:
   eof_newline: true

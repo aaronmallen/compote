@@ -1,0 +1,26 @@
+# Layer 1. The configuration that ships with the application.
+
+name = "compote"
+released = 2026-08-28
+tags = ["api"]
+
+[server]
+host = "0.0.0.0"
+max_body_bytes = 1048576
+port = 8080
+
+[server.tls]
+ciphers = ["TLS_AES_128_GCM_SHA256"]
+enabled = false
+
+[database]
+url = "postgres://localhost/compote"
+pool.max = 16
+pool.min = 2
+
+[logging]
+level = "warn"
+targets = ["stdout"]
+
+[features]
+metrics = { enabled = true, rollout = 1.0 }

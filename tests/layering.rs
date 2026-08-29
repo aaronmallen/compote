@@ -1,3 +1,5 @@
+#![cfg(all(feature = "json", feature = "toml"))]
+
 use std::io::Write;
 
 use ::compote::{Compote, Json, Serialized, Toml};

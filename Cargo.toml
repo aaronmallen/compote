@@ -29,4 +29,5 @@ yaml_serde = { optional = true, version = "0.10" }
 
 [dev-dependencies]
 pretty_assertions = "1"
+temp-env = "0.3"
 tempfile = "3"

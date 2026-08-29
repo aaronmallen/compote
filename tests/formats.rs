@@ -1,0 +1,251 @@
+//! One chain, five formats.
+//!
+//! Every source under `tests/fixtures/layered` speaks a different format and owns a different slice
+//! of the configuration. Nothing about merging is per format: each file parses into the same shape
+//! first, so a YAML table lays over a TOML one exactly as it would over another YAML one, and an
+//! environment variable, which is only ever text, lands on a numeric field at the bottom of a
+//! three-level path.
+
+#![cfg(all(
+  feature = "env",
+  feature = "json",
+  feature = "jsonc",
+  feature = "toml",
+  feature = "yaml"
+))]
+
+mod common;
+
+use ::compote::{Compote, Env, Json, Jsonc, Serialized, Toml, Yaml};
+
+use crate::common::{
+  Database, Feature, Level, Logging, Owner, Pool, Replica, Server, Settings, Target, Tls, fixture, map, strings,
+};
+
+const PREFIX: &str = "COMPOTE_FORMATS_";
+
+/// The environment sitting on top of the files. Every value is text, as it always is.
+fn environment() -> Vec<(String, Option<String>)> {
+  [
+    ("CONFIG", "/etc/compote/config.toml"),
+    ("DATABASE__POOL__IDLE_TIMEOUT", "45.5"),
+    ("MILESTONES", "2026-01-01, 2026-06-15"),
+    ("SERVER__BACKLOG", "-1"),
+    ("SERVER__MAX_BODY_BYTES", "4294967296"),
+    ("SERVER__TLS__CIPHERS", "TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384"),
+  ]
+  .into_iter()
+  .map(|(key, value)| (format!("{PREFIX}{key}"), Some(value.to_owned())))
+  .collect()
+}
+
+/// Defaults, then the shipped file, then the environment's file, then the developer's, then the
+/// generated secrets, then the process environment.
+fn stack() -> Settings {
+  Compote::from(Serialized::defaults(Settings::default()))
+    .merge(Toml::path(fixture("layered/base.toml")))
+    .merge(Yaml::path(fixture("layered/environment.yaml")))
+    .merge(Jsonc::path(fixture("layered/local.jsonc")))
+    .merge(Json::path(fixture("layered/secrets.json")))
+    .merge(Env::prefixed(PREFIX).ignore(&["CONFIG"]).split("__"))
+    .extract()
+    .unwrap()
+}
+
+fn merged() -> Settings {
+  temp_env::with_vars(environment(), stack)
+}
+
+mod compote {
+  use super::*;
+
+  mod merge {
+    use pretty_assertions::assert_eq;
+
+    use super::*;
+
+    #[test]
+    fn it_merges_five_formats_into_one_value() {
+      assert_eq!(
+        merged(),
+        Settings {
+          database: Database {
+            pool: Pool {
+              // Defaulted, raised by YAML, raised again by the environment.
+              idle_timeout: 45.5,
+              // Set by TOML, raised by YAML.
+              max: 32,
+              // Set by TOML and never touched again.
+              min: 2,
+            },
+            // Only YAML says anything about replicas.
+            replicas: vec![Replica {
+              host: "replica-1.internal".to_owned(),
+              port: 5432,
+              weight: 0.75,
+            }],
+            // TOML names a database, JSON replaces it with one that has credentials.
+            url: "postgres://app:s3cret@db.internal/compote".to_owned(),
+          },
+          // No layer mentions it, so the default survives.
+          extra: map(Vec::new()),
+          features: map(vec![
+            // YAML introduces the key, JSONC changes both of its fields.
+            (
+              "beta-ui",
+              Feature {
+                enabled: true,
+                rollout: 0.05,
+              }
+            ),
+            // TOML's entry is untouched by the layers that add a sibling.
+            (
+              "metrics",
+              Feature {
+                enabled: true,
+                rollout: 1.0,
+              }
+            ),
+          ]),
+          logging: Logging {
+            // warn, then info, then debug.
+            level: Level::Debug,
+            // A list is replaced whole, never appended to.
+            targets: vec![
+              Target::Stdout,
+              Target::File {
+                path: "/tmp/compote.log".to_owned(),
+                rotate: false,
+              }
+            ],
+          },
+          // Text from the environment, split on commas into a list.
+          milestones: vec!["2026-01-01".to_owned(), "2026-06-15".to_owned()],
+          name: "compote".to_owned(),
+          notes: Vec::new(),
+          // Only the generated file knows these, and one of them is an explicit null.
+          owners: vec![
+            Owner {
+              email: Some("hello@aaronmallen.me".to_owned()),
+              name: "Aaron".to_owned(),
+            },
+            Owner {
+              email: None,
+              name: "Ops".to_owned(),
+            },
+          ],
+          // A bare TOML date, over a default string.
+          released: "2026-08-28".to_owned(),
+          server: Server {
+            // "-1" from the environment onto an i32.
+            backlog: -1,
+            // JSONC is the only layer with headers.
+            headers: strings(vec![("x-powered-by", "compote")]),
+            host: "0.0.0.0".to_owned(),
+            // "4294967296" from the environment onto a u64.
+            max_body_bytes: 4_294_967_296,
+            // 80, then 8080, then 8443.
+            port: 8443,
+            tls: Tls {
+              // The environment replaces the list TOML set.
+              ciphers: vec!["TLS_AES_128_GCM_SHA256".to_owned(), "TLS_AES_256_GCM_SHA384".to_owned(),],
+              // false in TOML, true in YAML.
+              enabled: true,
+              // Absent until YAML supplies it.
+              min_version: Some("1.3".to_owned()),
+            },
+          },
+          tags: vec!["api".to_owned(), "web".to_owned()],
+        }
+      );
+    }
+
+    #[test]
+    fn it_lets_a_later_format_change_one_key_of_a_table_an_earlier_one_set() {
+      let pool = merged().database.pool;
+
+      assert_eq!(pool.max, 32, "yaml raises the maximum toml set");
+      assert_eq!(pool.min, 2, "and leaves the minimum beside it alone");
+    }
+
+    #[test]
+    fn it_replaces_a_list_rather_than_appending_to_it() {
+      assert_eq!(
+        merged().logging.targets.len(),
+        2,
+        "jsonc's two targets, not toml's plus them"
+      );
+    }
+
+    #[test]
+    fn it_coerces_environment_text_at_the_bottom_of_a_nested_path() {
+      let settings = merged();
+
+      assert_eq!(settings.database.pool.idle_timeout, 45.5);
+      assert_eq!(settings.server.tls.ciphers.len(), 2);
+    }
+
+    #[test]
+    fn it_leaves_a_single_underscore_inside_a_name_alone() {
+      assert_eq!(
+        merged().server.max_body_bytes,
+        4_294_967_296,
+        "the separator is two underscores, so max_body_bytes stays one key"
+      );
+    }
+
+    #[test]
+    fn it_carries_a_parse_failure_across_formats_to_the_end_of_the_chain() {
+      let error = Compote::from(Serialized::defaults(Settings::default()))
+        .merge(Toml::path(fixture("layered/base.toml")))
+        .merge(Yaml::path(fixture("layered/broken.yaml")))
+        .merge(Json::path(fixture("layered/secrets.json")))
+        .extract::<Settings>()
+        .unwrap_err();
+
+      assert!(error.to_string().starts_with("failed to parse"), "{error}");
+      assert!(error.to_string().contains("broken.yaml"), "{error}");
+    }
+  }
+
+  mod join {
+    use pretty_assertions::assert_eq;
+
+    use super::*;
+
+    #[test]
+    fn it_walks_outward_from_the_nearest_file_to_the_furthest() {
+      let settings: Settings = Compote::from(Jsonc::path(fixture("layered/local.jsonc")))
+        .join(Yaml::path(fixture("layered/environment.yaml")))
+        .join(Toml::path(fixture("layered/base.toml")))
+        .join(Serialized::defaults(Settings::default()))
+        .extract()
+        .unwrap();
+
+      assert_eq!(settings.logging.level, Level::Debug, "the nearest file wins");
+      assert_eq!(settings.server.port, 8443, "the file behind it fills the gap");
+      assert_eq!(
+        settings.server.host, "0.0.0.0",
+        "and the one behind that fills the rest"
+      );
+      assert_eq!(settings.database.pool.min, 2);
+      assert_eq!(settings.server.backlog, 128, "with the defaults underneath everything");
+    }
+
+    #[test]
+    fn it_does_not_let_a_furthest_layer_take_a_key_a_nearer_one_set() {
+      let settings: Settings = Compote::from(Yaml::path(fixture("layered/environment.yaml")))
+        .join(Toml::path(fixture("layered/base.toml")))
+        .join(Serialized::defaults(Settings::default()))
+        .extract()
+        .unwrap();
+
+      assert!(
+        settings.server.tls.enabled,
+        "yaml said true, toml's false does not come back"
+      );
+      assert_eq!(settings.database.pool.max, 32);
+      assert_eq!(settings.tags, vec!["api", "web"]);
+    }
+  }
+}

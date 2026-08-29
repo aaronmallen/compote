@@ -1,0 +1,17 @@
+// Layer 3. One developer's machine. Never committed, which is why it may carry comments.
+{
+  // Chattier logs, and a copy on disk.
+  "logging": {
+    "level": "debug",
+    "targets": ["stdout", { "file": { "path": "/tmp/compote.log", "rotate": false } }],
+  },
+
+  "features": {
+    // Turning the new interface on locally without changing the rollout for anyone else.
+    "beta-ui": { "enabled": true, "rollout": 5e-2 },
+  },
+
+  "server": {
+    "headers": { "x-powered-by": "compote" },
+  },
+}

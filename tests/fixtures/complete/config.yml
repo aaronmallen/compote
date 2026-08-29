@@ -1,0 +1,6 @@
+# The same configuration under the other YAML extension, trimmed to the keys a `.yml` test needs.
+server:
+  host: "0.0.0.0"
+  port: 8443
+  tls:
+    enabled: true
