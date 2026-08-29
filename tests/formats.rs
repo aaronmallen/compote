@@ -6,11 +6,17 @@
 //! environment variable, which is only ever text, lands on a numeric field at the bottom of a
 //! three-level path.
 
-#![cfg(all(feature = "env", feature = "json", feature = "toml", feature = "yaml"))]
+#![cfg(all(
+  feature = "env",
+  feature = "json",
+  feature = "msgpack",
+  feature = "toml",
+  feature = "yaml"
+))]
 
 mod common;
 
-use ::compote::{Compote, Env, Json, Serialized, Toml, Yaml};
+use ::compote::{Compote, Env, Json, MsgPack, Serialized, Toml, Yaml};
 
 use crate::common::{
   Database, Feature, Level, Logging, Owner, Pool, Replica, Server, Settings, Target, Tls, fixture, map, strings,
@@ -34,13 +40,14 @@ fn environment() -> Vec<(String, Option<String>)> {
 }
 
 /// Defaults, then the shipped file, then the environment's file, then the developer's, then the
-/// generated secrets, then the process environment.
+/// generated secrets, then the process environment. The generated layer is the binary one, which
+/// is the shape MessagePack is actually for.
 fn stack() -> Settings {
   Compote::from(Serialized::defaults(Settings::default()))
     .merge(Toml::path(fixture("layered/base.toml")))
     .merge(Yaml::path(fixture("layered/environment.yaml")))
     .merge(Json::path(fixture("layered/local.jsonc")))
-    .merge(Json::path(fixture("layered/secrets.json")))
+    .merge(MsgPack::path(fixture("layered/secrets.msgpack")))
     .merge(Env::prefixed(PREFIX).ignore(&["CONFIG"]).split("__"))
     .extract()
     .unwrap()
@@ -78,13 +85,13 @@ mod compote {
               port: 5432,
               weight: 0.75,
             }],
-            // TOML names a database, JSON replaces it with one that has credentials.
+            // TOML names a database, MessagePack replaces it with one that has credentials.
             url: "postgres://app:s3cret@db.internal/compote".to_owned(),
           },
           // No layer mentions it, so the default survives.
           extra: map(Vec::new()),
           features: map(vec![
-            // YAML introduces the key, JSONC changes both of its fields.
+            // YAML introduces the key, JSON changes both of its fields.
             (
               "beta-ui",
               Feature {
@@ -133,7 +140,7 @@ mod compote {
           server: Server {
             // "-1" from the environment onto an i32.
             backlog: -1,
-            // JSONC is the only layer with headers.
+            // JSON is the only layer with headers.
             headers: strings(vec![("x-powered-by", "compote")]),
             host: "0.0.0.0".to_owned(),
             // "4294967296" from the environment onto a u64.
@@ -167,7 +174,7 @@ mod compote {
       assert_eq!(
         merged().logging.targets.len(),
         2,
-        "jsonc's two targets, not toml's plus them"
+        "json's two targets, not toml's plus them"
       );
     }
 
@@ -193,7 +200,7 @@ mod compote {
       let error = Compote::from(Serialized::defaults(Settings::default()))
         .merge(Toml::path(fixture("layered/base.toml")))
         .merge(Yaml::path(fixture("layered/broken.yaml")))
-        .merge(Json::path(fixture("layered/secrets.json")))
+        .merge(MsgPack::path(fixture("layered/secrets.msgpack")))
         .extract::<Settings>()
         .unwrap_err();
 

@@ -24,12 +24,13 @@ Every `merge` beats the one before it. Here the child file beats its parent, and
 
 Each format sits behind a feature of the same name. None are on by default, so you pay for what you read.
 
-| Feature | Reads                 | Parser                       |
-|---------|-----------------------|------------------------------|
-| `env`   | environment variables |                              |
-| `json`  | `.json`, `.jsonc`     | `jsonc-parser`               |
-| `toml`  | `.toml`               | `toml_edit`                  |
-| `yaml`  | `.yaml`, `.yml`       | `yaml_serde`                 |
+| Feature   | Reads                 | Parser                       |
+|-----------|-----------------------|------------------------------|
+| `env`     | environment variables |                              |
+| `json`    | `.json`, `.jsonc`     | `jsonc-parser`               |
+| `msgpack` | `.msgpack`, `.mpk`    | `rmp-serde`                  |
+| `toml`    | `.toml`               | `toml_edit`                  |
+| `yaml`    | `.yaml`, `.yml`       | `yaml_serde`                 |
 
 `Json` reads both spellings, since JSON with comments is a superset of JSON. Comments and trailing
 commas are allowed and nothing else is, so the extension decides nothing and a file that uses neither
@@ -41,6 +42,11 @@ Json::path("config.json").allow_hexadecimal_numbers().deny_comments() // the sam
 Json::path("config.json").strict()                                    // JSON and nothing else
 Json::path("config.json").lenient()                                   // everything the parser knows
 ```
+
+`MsgPack` is the one binary format, for a file something else writes rather than a person. It wants
+string keys, which is what `rmp_serde::to_vec_named` writes and the compact `rmp_serde::to_vec` does
+not: the compact encoding turns a struct into an array of values in declaration order, which has no
+field names left to merge on.
 
 ## Credits
 

@@ -2,6 +2,8 @@
 mod env;
 #[cfg(feature = "json")]
 mod json;
+#[cfg(feature = "msgpack")]
+mod msgpack;
 mod serialized;
 #[cfg(feature = "toml")]
 mod toml;
@@ -12,6 +14,8 @@ mod yaml;
 pub use env::Env;
 #[cfg(feature = "json")]
 pub use json::Json;
+#[cfg(feature = "msgpack")]
+pub use msgpack::MsgPack;
 pub use serialized::Serialized;
 #[cfg(feature = "toml")]
 pub use toml::Toml;
@@ -44,6 +48,27 @@ pub trait Provider {
   fn data(&self) -> Result<Value>;
 }
 
+/// Names the file a parser failed on, and reads a document holding nothing as an empty table.
+///
+/// A source that says only `null` has nothing to contribute to a merge, which is the same thing an
+/// absent key says, so it lays over the layer beneath without taking anything from it.
+#[cfg(any(feature = "json", feature = "msgpack", feature = "toml", feature = "yaml"))]
+fn finish<E>(path: &std::path::Path, parsed: std::result::Result<Value, E>) -> Result<Value>
+where
+  E: std::error::Error + Send + Sync + 'static,
+{
+  let value = parsed.map_err(|source| crate::Error::Parse {
+    path: path.to_path_buf(),
+    source: Box::new(source),
+  })?;
+
+  Ok(match value {
+    Value::Null => Value::table(),
+    other => other,
+  })
+}
+
+/// Reads a text file and hands its contents to `parse`.
 #[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
 fn load<E>(path: &std::path::Path, parse: impl FnOnce(&str) -> std::result::Result<Value, E>) -> Result<Value>
 where
@@ -58,13 +83,23 @@ where
     return Ok(Value::table());
   }
 
-  let value = parse(&source).map_err(|source| crate::Error::Parse {
+  finish(path, parse(&source))
+}
+
+/// Reads a binary file and hands its bytes to `parse`.
+#[cfg(feature = "msgpack")]
+fn load_bytes<E>(path: &std::path::Path, parse: impl FnOnce(&[u8]) -> std::result::Result<Value, E>) -> Result<Value>
+where
+  E: std::error::Error + Send + Sync + 'static,
+{
+  let source = std::fs::read(path).map_err(|source| crate::Error::Read {
     path: path.to_path_buf(),
-    source: Box::new(source),
+    source,
   })?;
 
-  Ok(match value {
-    Value::Null => Value::table(),
-    other => other,
-  })
+  if source.is_empty() {
+    return Ok(Value::table());
+  }
+
+  finish(path, parse(&source))
 }

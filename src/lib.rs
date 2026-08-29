@@ -49,6 +49,10 @@
 //!
 //! Each format sits behind a feature of the same name, and none are on by default.
 //!
+//! [`MsgPack`] is the one binary format, for a file something else writes rather than a person. It
+//! wants string keys, which is what `rmp_serde::to_vec_named` writes and the compact
+//! `rmp_serde::to_vec` does not.
+//!
 //! [`Json`] covers both spellings, since JSON with comments is a superset of JSON. Comments and
 //! trailing commas are allowed and nothing else is, so the extension decides nothing and a file that
 //! uses neither is still held to strict JSON. Say [`strict`](Json::strict) to refuse even those, or
@@ -59,6 +63,7 @@
 //! | --- | --- | --- |
 //! | `env` | environment variables | |
 //! | `json` | `.json`, `.jsonc` | `jsonc-parser` |
+//! | `msgpack` | `.msgpack`, `.mpk` | `rmp-serde` |
 //! | `toml` | `.toml` | `toml_edit` |
 //! | `yaml` | `.yaml`, `.yml` | `yaml_serde` |
 #![warn(missing_docs)]
@@ -74,6 +79,8 @@ pub use error::{Error, Result};
 pub use provider::Env;
 #[cfg(feature = "json")]
 pub use provider::Json;
+#[cfg(feature = "msgpack")]
+pub use provider::MsgPack;
 #[cfg(feature = "toml")]
 pub use provider::Toml;
 #[cfg(feature = "yaml")]

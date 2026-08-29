@@ -7,6 +7,8 @@
 *.ico binary
 *.zip binary
 *.zst binary
+*.msgpack binary
+*.mpk binary
 *.woff binary
 *.woff2 binary
 *.ttf binary

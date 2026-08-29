@@ -18,6 +18,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- A `msgpack` feature and a `MsgPack` provider, reading MessagePack through `rmp-serde`. The one
+  binary format, for a file something else writes: a build step, a cache, a sidecar. It wants string
+  keys, which is what `rmp_serde::to_vec_named` writes and the compact `rmp_serde::to_vec` does not,
+  and it refuses the `bin` and `ext` families rather than guessing at them.
 - `Json::strict` and `Json::lenient`, for JSON alone and for everything the parser knows.
 - An `allow_` and a `deny_` method for each syntax `Json` can be taught: comments, trailing commas,
   single-quoted strings, hexadecimal numbers, unary-plus numbers, loose object property names, and
