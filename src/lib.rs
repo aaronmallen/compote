@@ -49,9 +49,11 @@
 //!
 //! Each format sits behind a feature of the same name, and none are on by default.
 //!
-//! [`MsgPack`] is the one binary format, for a file something else writes rather than a person. It
-//! wants string keys, which is what `rmp_serde::to_vec_named` writes and the compact
-//! `rmp_serde::to_vec` does not.
+//! [`Cbor`] and [`MsgPack`] are the binary formats, for a file something else writes rather than a
+//! person. Both want string keys, and both refuse raw bytes and tagged or extension values rather
+//! than guessing at them. [`MsgPack`] wants its keys from `rmp_serde::to_vec_named` rather than the
+//! compact `rmp_serde::to_vec`, which turns a struct into an array of values in declaration order
+//! and leaves no field names to merge on.
 //!
 //! [`Json`] covers both spellings, since JSON with comments is a superset of JSON. Comments and
 //! trailing commas are allowed and nothing else is, so the extension decides nothing and a file that
@@ -61,6 +63,7 @@
 //!
 //! | Feature | Reads | Parser |
 //! | --- | --- | --- |
+//! | `cbor` | `.cbor` | `ciborium` |
 //! | `env` | environment variables | |
 //! | `json` | `.json`, `.jsonc` | `jsonc-parser` |
 //! | `msgpack` | `.msgpack`, `.mpk` | `rmp-serde` |
@@ -75,6 +78,8 @@ mod value;
 
 pub use compote::Compote;
 pub use error::{Error, Result};
+#[cfg(feature = "cbor")]
+pub use provider::Cbor;
 #[cfg(feature = "env")]
 pub use provider::Env;
 #[cfg(feature = "json")]

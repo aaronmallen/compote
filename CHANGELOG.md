@@ -18,6 +18,9 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- A `cbor` feature and a `Cbor` provider, reading CBOR (RFC 8949) through `ciborium`. The second
+  binary format, and the one with a standards body behind it. Like MessagePack it wants string keys,
+  and it refuses byte strings and tagged values, the standard date and time tags among them.
 - A `msgpack` feature and a `MsgPack` provider, reading MessagePack through `rmp-serde`. The one
   binary format, for a file something else writes: a build step, a cache, a sidecar. It wants string
   keys, which is what `rmp_serde::to_vec_named` writes and the compact `rmp_serde::to_vec` does not,

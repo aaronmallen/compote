@@ -1,3 +1,5 @@
+#[cfg(feature = "cbor")]
+mod cbor;
 #[cfg(feature = "env")]
 mod env;
 #[cfg(feature = "json")]
@@ -10,6 +12,8 @@ mod toml;
 #[cfg(feature = "yaml")]
 mod yaml;
 
+#[cfg(feature = "cbor")]
+pub use cbor::Cbor;
 #[cfg(feature = "env")]
 pub use env::Env;
 #[cfg(feature = "json")]
@@ -52,7 +56,13 @@ pub trait Provider {
 ///
 /// A source that says only `null` has nothing to contribute to a merge, which is the same thing an
 /// absent key says, so it lays over the layer beneath without taking anything from it.
-#[cfg(any(feature = "json", feature = "msgpack", feature = "toml", feature = "yaml"))]
+#[cfg(any(
+  feature = "cbor",
+  feature = "json",
+  feature = "msgpack",
+  feature = "toml",
+  feature = "yaml"
+))]
 fn finish<E>(path: &std::path::Path, parsed: std::result::Result<Value, E>) -> Result<Value>
 where
   E: std::error::Error + Send + Sync + 'static,
@@ -87,7 +97,7 @@ where
 }
 
 /// Reads a binary file and hands its bytes to `parse`.
-#[cfg(feature = "msgpack")]
+#[cfg(any(feature = "cbor", feature = "msgpack"))]
 fn load_bytes<E>(path: &std::path::Path, parse: impl FnOnce(&[u8]) -> std::result::Result<Value, E>) -> Result<Value>
 where
   E: std::error::Error + Send + Sync + 'static,

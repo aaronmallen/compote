@@ -75,6 +75,7 @@ jobs:
       fail-fast: false
       matrix:
         feature:
+          - cbor
           - env
           - json
           - msgpack
