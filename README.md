@@ -45,11 +45,36 @@ Json::path("config.json").lenient()                                   // everyth
 ```
 
 `Cbor` and `MsgPack` are the binary formats, for a file something else writes rather than a person.
-Both refuse raw bytes and tagged or extension values rather than guessing at them, and both want
-string keys. `MsgPack` wants
-them from `rmp_serde::to_vec_named`, not from the compact `rmp_serde::to_vec`: the compact encoding
-turns a struct into an array of values in declaration order, which has no field names left to merge
-on.
+Both want string keys, and both refuse raw bytes and tagged or extension values rather than guessing
+at them. `MsgPack` wants its keys from `rmp_serde::to_vec_named` rather than the compact
+`rmp_serde::to_vec`, which turns a struct into an array of values in declaration order and leaves no
+field names to merge on.
+
+## Roadmap
+
+Six sources read today, and the shape of the crate is settled. What follows is about breadth, not
+about changing how any of it works.
+
+**Likely next: INI and `.env`.** Every value in both is text, which is the model the environment
+already uses and the one coercion was built for. Each needs a decision before any code: INI is two
+levels deep and `.env` is flat, so anything nested needs a convention rather than a parser. Java
+properties is the same shape again, for a narrower audience.
+
+**Maybe: KDL.** The appeal is real and so is the problem. A KDL node carries a name, positional
+arguments, named properties, and children, all at once:
+
+```kdl
+server host="0.0.0.0" port=8443 {
+  tls enabled=#true
+}
+```
+
+Nothing there says how it should become a table of named values. Do arguments collect under a
+reserved key? Do repeated sibling nodes become a list? How do a node's arguments and its children
+share one place? The KDL project publishes JSON-in-KDL as a convention rather than a spec, which is
+the same admission. The crates say it too: `kdl` parses documents without a serde layer, and `knus`
+deserializes into types you declare through its own derive, not into an untyped value. KDL is a
+design decision first and a parser second, and it waits on that decision being worth making.
 
 ## Credits
 

@@ -68,9 +68,10 @@ Include:
 
 ## Supported Versions
 
-| Version |  Support  |
-|:-------:|:---------:|
-|  0.1.X  | Supported |
+| Version |    Support    |
+|:-------:|:-------------:|
+|  0.2.X  |   Supported   |
+| > 0.2.X | Not Supported |
 
 ## Rules for Contributors
 

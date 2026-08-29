@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [v0.2.0] - 2026-08-28
+
 ### Changed
 
 - `Json` now reads JSON with comments and trailing commas, so a `.json` file may carry comments and a
@@ -42,4 +44,5 @@ Initial release
 [Keep a Changelog]: https://keepachangelog.com/en/1.1.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-[Unreleased]: https://github.com/aaronmallen/fig/tree/main/crates/compote
+[Unreleased]: https://github.com/aaronmallen/compote/compare/0.2.0...HEAD
+[v0.2.0]: https://github.com/aaronmallen/compote/compare/3892304c...0.2.0
