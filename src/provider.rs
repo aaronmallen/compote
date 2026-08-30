@@ -8,6 +8,8 @@ mod env;
 mod ini;
 #[cfg(feature = "json")]
 mod json;
+#[cfg(feature = "keyring")]
+mod keyring;
 #[cfg(feature = "msgpack")]
 mod msgpack;
 mod serialized;
@@ -18,7 +20,7 @@ mod xml;
 #[cfg(feature = "yaml")]
 mod yaml;
 
-#[cfg(any(feature = "dotenv", feature = "env"))]
+#[cfg(any(feature = "dotenv", feature = "env", feature = "keyring"))]
 use std::collections::BTreeMap;
 
 #[cfg(feature = "cbor")]
@@ -31,6 +33,8 @@ pub use env::Env;
 pub use ini::Ini;
 #[cfg(feature = "json")]
 pub use json::Json;
+#[cfg(feature = "keyring")]
+pub use keyring::Keyring;
 #[cfg(feature = "msgpack")]
 pub use msgpack::MsgPack;
 pub use serialized::Serialized;
@@ -176,7 +180,7 @@ fn overlay(
 }
 
 /// Puts `value` at the path `key` names, making each table along the way that is missing.
-#[cfg(any(feature = "dotenv", feature = "env"))]
+#[cfg(any(feature = "dotenv", feature = "env", feature = "keyring"))]
 fn insert(table: &mut BTreeMap<String, Value>, key: &str, separator: &str, value: String) {
   let segments: Vec<&str> = if separator.is_empty() {
     vec![key]

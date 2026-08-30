@@ -80,6 +80,7 @@ jobs:
           - env
           - ini
           - json
+          - keyring
           - msgpack
           - toml
           - xml

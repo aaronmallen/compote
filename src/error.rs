@@ -22,6 +22,16 @@ pub enum Error {
     /// What the operating system reported.
     source: io::Error,
   },
+  /// A secret could not be read from a keyring.
+  #[error("failed to read {user} from the {service} keyring: {source}")]
+  Secret {
+    /// The keyring the secret was looked for in.
+    service: String,
+    /// What the credential store reported.
+    source: Box<dyn StdError + Send + Sync>,
+    /// The name the secret was looked for under.
+    user: String,
+  },
   /// A value could not be turned into configuration.
   #[error("{0}")]
   Serialize(String),

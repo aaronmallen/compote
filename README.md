@@ -31,6 +31,7 @@ Each format sits behind a feature of the same name. None are on by default, so y
 | `env`     | environment variables |                              |
 | `ini`     | `.ini`                | `rust-ini`                   |
 | `json`    | `.json`, `.jsonc`     | `jsonc-parser`               |
+| `keyring` | the platform keyring  | `keyring-core`               |
 | `msgpack` | `.msgpack`, `.mpk`    | `rmp-serde`                  |
 | `toml`    | `.toml`               | `toml_edit`                  |
 | `xml`     | `.xml`                | `roxmltree`                  |
@@ -56,6 +57,28 @@ shell variable name, so a key with a hyphen in it has no spelling.
 Dotenv::path(".env")                                  // `SERVER__HOST` is one key
 Dotenv::path(".env").prefixed("APP_").split("__")     // `APP_SERVER__HOST` nests under `server`
 ```
+
+`Keyring` is the layer that never goes in a file. It is not a whole configuration: a keyring holds
+one secret per name, so you name the handful a committed file has to lie about, and everything else
+comes from the layer underneath.
+
+```rust
+Compote::from(Toml::path("config.toml"))
+  .merge(Keyring::service("compote").secret_named("database.url", "db-url").split("."))
+  .extract()?
+```
+
+Compote does not choose where those secrets live any more than it goes looking for your files, and
+it links no credential store at all. The application installs one and `Keyring` reads through it, so
+which platforms you support is a question about what you install. A secret you named and the store
+does not have is an error, unless you say `optional()`.
+
+The [keyring] crate's `v1` feature is the usual way to get the platform's own, covering macOS
+(Keychain), Windows (Credential Manager), and Linux and other non-Apple Unix (Secret Service, over
+D-Bus). Anywhere else it fails rather than guessing, and the store gets named directly:
+`apple-native-keyring-store` for iOS, `android-native-keyring-store` for Android, `db-keystore` for
+a file. Worth knowing even where `v1` works: a headless Linux has no D-Bus session and so no Secret
+Service, so a container or CI runner usually wants `linux-keyutils-keyring-store` instead.
 
 `Ini` and `Xml` are the file formats that are only text, which is the model the environment already
 uses and the one coercion was built for.
@@ -87,7 +110,7 @@ field names to merge on.
 
 ## Roadmap
 
-Nine sources read today, and the shape of the crate is settled. What follows is about breadth, not
+Ten sources read today, and the shape of the crate is settled. What follows is about breadth, not
 about changing how any of it works.
 
 **Maybe: Java properties.** The same shape `.env` has, for a narrower audience, and the decision is
@@ -122,4 +145,5 @@ parser that is still maintained, but the design is Figment's.
 Compote is licensed under the [MIT License]
 
 [Figment]: https://github.com/SergioBenitez/Figment
+[keyring]: https://crates.io/crates/keyring
 [MIT License]: LICENSE

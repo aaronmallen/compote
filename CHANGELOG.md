@@ -15,6 +15,19 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- A `keyring` feature and a `Keyring` provider, reading secrets from the platform keyring through
+  `keyring-core`. Not a whole configuration: a keyring holds one secret per name, so you name the
+  handful a committed file has to lie about and the rest comes from the layer underneath. Compote
+  does not choose where secrets live, so the application installs a credential store and this reads
+  through whatever is installed.
+- `Keyring::secret` and `Keyring::secret_named`, which read a secret stored under its own key or
+  under a different name, and `Keyring::split`, which nests the key it lands at.
+- `Keyring::optional` and `Keyring::required`. A secret you named and the store does not have is an
+  error, since naming it said you expected it. `optional` makes it an absent key instead, for the
+  machine that has not been given the secrets yet, and only for a secret that was never set — a
+  keyring that will not open is still an error.
+- An `Error::Secret` variant, carrying the keyring and the name a secret was looked for under. This
+  is a breaking change for anyone matching `Error` exhaustively.
 - A `dotenv` feature and a `Dotenv` provider, reading `.env` files through `dotenvy`. `Env` kept in
   a file: the same shell names, lowercased and nested the same way, so one file lands the same
   whether Compote reads it or the shell sourced it first. A name holds one value and saying it twice
@@ -35,7 +48,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - `Xml::allow_doctype` and `Xml::deny_doctype`. A `<!DOCTYPE>` is refused until asked for, since a
   DTD can define entities that expand into far more than the file appears to hold. Nothing outside
   the file is ever fetched either way.
-
 - An `ini` feature and an `Ini` provider, reading INI through `rust-ini`. The one file format that is
   only text, which is the model the environment already uses. A section is a table, and past that
   nothing nests until `Ini::split` says what to nest on, since INI has no depth of its own to borrow.

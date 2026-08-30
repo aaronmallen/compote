@@ -61,6 +61,12 @@
 //! holds one value and saying it twice replaces it, which is all an environment variable can be. A
 //! name is a shell variable name, so a key with a hyphen in it has no spelling.
 //!
+//! [`Keyring`] is the layer that never goes in a file. It is not a whole configuration: a keyring
+//! holds one secret per name, so you name the handful a committed file has to lie about and
+//! everything else comes from underneath. Compote does not choose where those secrets live any more
+//! than it goes looking for your files, so the application installs a credential store and this
+//! reads through it.
+//!
 //! [`Ini`] is the one file format that is only text, which is the model the environment already
 //! uses and the one coercion was built for. A section is a table, and past that nothing nests until
 //! you say [`split`](Ini::split), since INI has no depth of its own to borrow. A key said twice is
@@ -84,6 +90,7 @@
 //! | `env` | environment variables | |
 //! | `ini` | `.ini` | `rust-ini` |
 //! | `json` | `.json`, `.jsonc` | `jsonc-parser` |
+//! | `keyring` | the platform keyring | `keyring-core` |
 //! | `msgpack` | `.msgpack`, `.mpk` | `rmp-serde` |
 //! | `toml` | `.toml` | `toml_edit` |
 //! | `xml` | `.xml` | `roxmltree` |
@@ -107,6 +114,8 @@ pub use provider::Env;
 pub use provider::Ini;
 #[cfg(feature = "json")]
 pub use provider::Json;
+#[cfg(feature = "keyring")]
+pub use provider::Keyring;
 #[cfg(feature = "msgpack")]
 pub use provider::MsgPack;
 #[cfg(feature = "toml")]
