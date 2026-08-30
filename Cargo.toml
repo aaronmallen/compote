@@ -3,13 +3,7 @@ categories = ["config", "encoding"]
 description = "Layered configuration. Merge files and environment variables into one typed value."
 edition = "2024"
 homepage = "https://github.com/aaronmallen/compote"
-include = [
-  "src/**/*.rs",
-  "Cargo.toml",
-  "LICENSE",
-  "README.md",
-  "CHANGELOG.md",
-]
+include = ["src/**/*.rs", "Cargo.toml", "LICENSE", "README.md", "CHANGELOG.md"]
 keywords = ["config", "configuration", "env", "layered", "settings"]
 license = "MIT"
 name = "compote"
