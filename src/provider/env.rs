@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use crate::{Provider, Result, Value};
 
 /// Configuration read from environment variables.
@@ -55,24 +53,7 @@ impl Env {
   }
 
   fn overlay(&self, vars: impl IntoIterator<Item = (String, String)>) -> Value {
-    let mut pairs: Vec<(String, String)> = vars.into_iter().collect();
-    pairs.sort();
-
-    let mut table = BTreeMap::new();
-
-    for (key, value) in pairs {
-      let Some(name) = key.strip_prefix(&self.prefix).map(str::to_ascii_lowercase) else {
-        continue;
-      };
-
-      if name.is_empty() || self.ignore.contains(&name) {
-        continue;
-      }
-
-      insert(&mut table, &name, &self.separator, value);
-    }
-
-    Value::Table(table)
+    super::overlay(vars, &self.prefix, &self.ignore, &self.separator)
   }
 }
 
@@ -83,36 +64,6 @@ impl Provider for Env {
 
     Ok(self.overlay(vars))
   }
-}
-
-fn insert(table: &mut BTreeMap<String, Value>, key: &str, separator: &str, value: String) {
-  let segments: Vec<&str> = if separator.is_empty() {
-    vec![key]
-  } else {
-    key.split(separator).filter(|segment| !segment.is_empty()).collect()
-  };
-
-  let Some((leaf, parents)) = segments.split_last() else {
-    return;
-  };
-
-  let mut current = table;
-
-  for segment in parents {
-    let entry = current.entry((*segment).to_owned()).or_insert_with(Value::table);
-
-    if !matches!(entry, Value::Table(_)) {
-      *entry = Value::table();
-    }
-
-    let Value::Table(nested) = entry else {
-      unreachable!("the entry was just replaced with a table")
-    };
-
-    current = nested;
-  }
-
-  current.insert((*leaf).to_owned(), Value::String(value));
 }
 
 #[cfg(test)]
@@ -246,33 +197,6 @@ mod tests {
           table(vec![("server", table(vec![("host", string("localhost"))]))])
         );
       }
-    }
-  }
-
-  mod insert {
-    use pretty_assertions::assert_eq;
-
-    use super::*;
-
-    #[test]
-    fn it_drops_empty_segments() {
-      let mut entries = BTreeMap::new();
-
-      insert(&mut entries, "server____host", "__", "localhost".to_owned());
-
-      assert_eq!(
-        Value::Table(entries),
-        table(vec![("server", table(vec![("host", string("localhost"))]))])
-      );
-    }
-
-    #[test]
-    fn it_ignores_a_key_that_is_nothing_but_separators() {
-      let mut entries = BTreeMap::new();
-
-      insert(&mut entries, "__", "__", "localhost".to_owned());
-
-      assert_eq!(Value::Table(entries), Value::table());
     }
   }
 }

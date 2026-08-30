@@ -1,13 +1,15 @@
-//! One chain, seven formats.
+//! One chain, eight formats.
 //!
 //! Every source under `tests/fixtures/layered` speaks a different format and owns a different slice
 //! of the configuration. Nothing about merging is per format: each file parses into the same shape
 //! first, so a YAML table lays over a TOML one exactly as it would over another YAML one, an XML
 //! and an INI file whose every value is text sit between typed ones without any of them noticing,
 //! and an environment variable, which is only ever text as well, lands on a numeric field at the
-//! bottom of a three-level path.
+//! bottom of a three-level path. The `.env` file sits directly beneath the environment it is
+//! written in the shape of, which is the pattern that format exists for.
 
 #![cfg(all(
+  feature = "dotenv",
   feature = "env",
   feature = "ini",
   feature = "json",
@@ -19,7 +21,7 @@
 
 mod common;
 
-use ::compote::{Compote, Env, Ini, Json, MsgPack, Serialized, Toml, Xml, Yaml};
+use ::compote::{Compote, Dotenv, Env, Ini, Json, MsgPack, Serialized, Toml, Xml, Yaml};
 
 use crate::common::{
   Database, Feature, Level, Logging, Owner, Pool, Replica, Server, Settings, Target, Tls, fixture, map, strings,
@@ -43,8 +45,9 @@ fn environment() -> Vec<(String, Option<String>)> {
 }
 
 /// Defaults, then the shipped file, then policy, then this host's, then the environment's, then the
-/// developer's, then the generated secrets, then the process environment. The generated layer is the
-/// binary one, which is the shape MessagePack is actually for.
+/// developer's, then the generated secrets, then that developer's exports, then the process
+/// environment. The generated layer is the binary one, which is the shape MessagePack is actually
+/// for, and the two beneath the top speak the same shell names in a file and out of one.
 fn stack() -> Settings {
   Compote::from(Serialized::defaults(Settings::default()))
     .merge(Toml::path(fixture("layered/base.toml")))
@@ -53,6 +56,12 @@ fn stack() -> Settings {
     .merge(Yaml::path(fixture("layered/environment.yaml")))
     .merge(Json::path(fixture("layered/local.jsonc")))
     .merge(MsgPack::path(fixture("layered/secrets.msgpack")))
+    .merge(
+      Dotenv::path(fixture("layered/developer.env"))
+        .prefixed("APP_")
+        .ignore(&["CONFIG"])
+        .split("__"),
+    )
     .merge(Env::prefixed(PREFIX).ignore(&["CONFIG"]).split("__"))
     .extract()
     .unwrap()
@@ -71,7 +80,7 @@ mod compote {
     use super::*;
 
     #[test]
-    fn it_merges_seven_formats_into_one_value() {
+    fn it_merges_eight_formats_into_one_value() {
       assert_eq!(
         merged(),
         Settings {
@@ -146,10 +155,10 @@ mod compote {
           server: Server {
             // INI's "512", then "-1" from the environment, both text onto an i32.
             backlog: -1,
-            // JSON is the only layer with headers.
-            headers: strings(vec![("x-powered-by", "compote")]),
+            // JSON names one, the .env file adds another beside it.
+            headers: strings(vec![("x-powered-by", "compote"), ("x_request_id", "from-the-dotenv")]),
             host: "0.0.0.0".to_owned(),
-            // "4294967296" from the environment onto a u64.
+            // The .env file says 1, and the real environment above it says this instead.
             max_body_bytes: 4_294_967_296,
             // 80, then 8080, then 8443.
             port: 8443,
@@ -192,6 +201,24 @@ mod compote {
         settings.server.tls.min_version.as_deref(),
         Some("1.3"),
         "xml's floor, raised by the typed layer above it"
+      );
+    }
+
+    #[test]
+    fn it_lets_the_environment_beat_the_dotenv_file_written_in_its_shape() {
+      let settings = merged();
+
+      assert_eq!(
+        settings.server.max_body_bytes, 4_294_967_296,
+        "the file says 1, and the export above it wins"
+      );
+      assert_eq!(
+        settings.server.headers["x_request_id"], "from-the-dotenv",
+        "and what only the file says survives"
+      );
+      assert!(
+        !settings.server.headers.contains_key("config"),
+        "the name pointing at the config file is ignored in both layers"
       );
     }
 

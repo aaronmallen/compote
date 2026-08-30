@@ -27,6 +27,7 @@ Each format sits behind a feature of the same name. None are on by default, so y
 | Feature   | Reads                 | Parser                       |
 |-----------|-----------------------|------------------------------|
 | `cbor`    | `.cbor`               | `ciborium`                   |
+| `dotenv`  | `.env`                | `dotenvy`                    |
 | `env`     | environment variables |                              |
 | `ini`     | `.ini`                | `rust-ini`                   |
 | `json`    | `.json`, `.jsonc`     | `jsonc-parser`               |
@@ -44,6 +45,16 @@ Json::path("config.json")                                             // JSON, c
 Json::path("config.json").allow_hexadecimal_numbers().deny_comments() // the same, adjusted
 Json::path("config.json").strict()                                    // JSON and nothing else
 Json::path("config.json").lenient()                                   // everything the parser knows
+```
+
+`Dotenv` is `Env` kept in a file. The same shell names, lowercased and nested the same way, so one
+`.env` file lands the same whether Compote reads it or the shell sourced it first. A name holds one
+value and saying it twice replaces it, which is all an environment variable can be, and a name is a
+shell variable name, so a key with a hyphen in it has no spelling.
+
+```rust
+Dotenv::path(".env")                                  // `SERVER__HOST` is one key
+Dotenv::path(".env").prefixed("APP_").split("__")     // `APP_SERVER__HOST` nests under `server`
 ```
 
 `Ini` and `Xml` are the file formats that are only text, which is the model the environment already
@@ -76,12 +87,13 @@ field names to merge on.
 
 ## Roadmap
 
-Eight sources read today, and the shape of the crate is settled. What follows is about breadth, not
+Nine sources read today, and the shape of the crate is settled. What follows is about breadth, not
 about changing how any of it works.
 
-**Likely next: `.env`.** Every value in it is text, the way INI's and the environment's are. What it
-still needs is the same decision INI needed: `.env` is flat, so anything nested is a convention
-rather than a parser. Java properties is the same shape again, for a narrower audience.
+**Maybe: Java properties.** The same shape `.env` has, for a narrower audience, and the decision is
+already made: flat until a separator says otherwise. What it would add over `Dotenv` is a different
+escape and comment dialect rather than a different model, which is the argument both for doing it
+cheaply and for not bothering.
 
 **Maybe: KDL.** The appeal is real and so is the problem. A KDL node carries a name, positional
 arguments, named properties, and children, all at once:

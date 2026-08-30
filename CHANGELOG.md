@@ -15,6 +15,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+- A `dotenv` feature and a `Dotenv` provider, reading `.env` files through `dotenvy`. `Env` kept in
+  a file: the same shell names, lowercased and nested the same way, so one file lands the same
+  whether Compote reads it or the shell sourced it first. A name holds one value and saying it twice
+  replaces it, which is all an environment variable can be, and a name is a shell variable name, so
+  a key with a hyphen in it has no spelling.
+- `Dotenv::prefixed`, `Dotenv::ignore`, and `Dotenv::split`, which read the same as their `Env`
+  counterparts. A prefix is optional here rather than the constructor, since a `.env` file is
+  already yours and needs no filtering out of the machine's whole environment.
 - An `xml` feature and an `Xml` provider, reading XML through `roxmltree`. The second file format
   that is only text, and the one that gets the most out of it. The root element names the file
   rather than anything in it and is thrown away, a child element is a key, an attribute is a key

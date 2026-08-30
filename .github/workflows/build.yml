@@ -76,6 +76,7 @@ jobs:
       matrix:
         feature:
           - cbor
+          - dotenv
           - env
           - ini
           - json

@@ -56,6 +56,11 @@
 //! compact `rmp_serde::to_vec`, which turns a struct into an array of values in declaration order
 //! and leaves no field names to merge on.
 //!
+//! [`Dotenv`] is [`Env`] kept in a file: the same shell names, lowercased and nested the same way,
+//! so one `.env` file lands the same whether this reads it or the shell sourced it first. A name
+//! holds one value and saying it twice replaces it, which is all an environment variable can be. A
+//! name is a shell variable name, so a key with a hyphen in it has no spelling.
+//!
 //! [`Ini`] is the one file format that is only text, which is the model the environment already
 //! uses and the one coercion was built for. A section is a table, and past that nothing nests until
 //! you say [`split`](Ini::split), since INI has no depth of its own to borrow. A key said twice is
@@ -75,6 +80,7 @@
 //! | Feature | Reads | Parser |
 //! | --- | --- | --- |
 //! | `cbor` | `.cbor` | `ciborium` |
+//! | `dotenv` | `.env` | `dotenvy` |
 //! | `env` | environment variables | |
 //! | `ini` | `.ini` | `rust-ini` |
 //! | `json` | `.json`, `.jsonc` | `jsonc-parser` |
@@ -93,6 +99,8 @@ pub use compote::Compote;
 pub use error::{Error, Result};
 #[cfg(feature = "cbor")]
 pub use provider::Cbor;
+#[cfg(feature = "dotenv")]
+pub use provider::Dotenv;
 #[cfg(feature = "env")]
 pub use provider::Env;
 #[cfg(feature = "ini")]
