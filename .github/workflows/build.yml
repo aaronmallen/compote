@@ -81,6 +81,7 @@ jobs:
           - json
           - msgpack
           - toml
+          - xml
           - yaml
     steps:
       - name: Checkout

@@ -11,6 +11,8 @@ mod msgpack;
 mod serialized;
 #[cfg(feature = "toml")]
 mod toml;
+#[cfg(feature = "xml")]
+mod xml;
 #[cfg(feature = "yaml")]
 mod yaml;
 
@@ -27,6 +29,8 @@ pub use msgpack::MsgPack;
 pub use serialized::Serialized;
 #[cfg(feature = "toml")]
 pub use toml::Toml;
+#[cfg(feature = "xml")]
+pub use xml::Xml;
 #[cfg(feature = "yaml")]
 pub use yaml::Yaml;
 
@@ -66,6 +70,7 @@ pub trait Provider {
   feature = "json",
   feature = "msgpack",
   feature = "toml",
+  feature = "xml",
   feature = "yaml"
 ))]
 fn finish<E>(path: &std::path::Path, parsed: std::result::Result<Value, E>) -> Result<Value>
@@ -84,7 +89,13 @@ where
 }
 
 /// Reads a text file and hands its contents to `parse`.
-#[cfg(any(feature = "ini", feature = "json", feature = "toml", feature = "yaml"))]
+#[cfg(any(
+  feature = "ini",
+  feature = "json",
+  feature = "toml",
+  feature = "xml",
+  feature = "yaml"
+))]
 fn load<E>(path: &std::path::Path, parse: impl FnOnce(&str) -> std::result::Result<Value, E>) -> Result<Value>
 where
   E: std::error::Error + Send + Sync + 'static,

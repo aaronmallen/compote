@@ -6,7 +6,27 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Changed
+
+- A string holding nothing now fills an empty map, the way it already filled an empty list. A format
+  that is only text has one spelling for a value that holds nothing, and it has to serve both. Only
+  the empty string: there is no splitting a string into named values, so anything else is still
+  refused.
+
 ### Added
+
+- An `xml` feature and an `Xml` provider, reading XML through `roxmltree`. The second file format
+  that is only text, and the one that gets the most out of it. The root element names the file
+  rather than anything in it and is thrown away, a child element is a key, an attribute is a key
+  beside it, and an element said twice is a list. A repeated element brings its own children along,
+  so that list holds tables as readily as strings, which is the one thing `Ini` cannot say.
+- `Xml::attribute_prefix`, which puts every attribute under a prefix of your choosing, for the
+  document where an attribute and a child element share a name and have to stay apart.
+- `Xml::text_key`, which names the key an element's own text lands under when it also carries
+  attributes or children. `$text` unless renamed, which no XML name can be.
+- `Xml::allow_doctype` and `Xml::deny_doctype`. A `<!DOCTYPE>` is refused until asked for, since a
+  DTD can define entities that expand into far more than the file appears to hold. Nothing outside
+  the file is ever fetched either way.
 
 - An `ini` feature and an `Ini` provider, reading INI through `rust-ini`. The one file format that is
   only text, which is the model the environment already uses. A section is a table, and past that

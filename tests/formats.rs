@@ -1,11 +1,11 @@
-//! One chain, six formats.
+//! One chain, seven formats.
 //!
 //! Every source under `tests/fixtures/layered` speaks a different format and owns a different slice
 //! of the configuration. Nothing about merging is per format: each file parses into the same shape
-//! first, so a YAML table lays over a TOML one exactly as it would over another YAML one, an INI
-//! file whose every value is text sits between two typed ones without either noticing, and an
-//! environment variable, which is only ever text as well, lands on a numeric field at the bottom of
-//! a three-level path.
+//! first, so a YAML table lays over a TOML one exactly as it would over another YAML one, an XML
+//! and an INI file whose every value is text sit between typed ones without any of them noticing,
+//! and an environment variable, which is only ever text as well, lands on a numeric field at the
+//! bottom of a three-level path.
 
 #![cfg(all(
   feature = "env",
@@ -13,12 +13,13 @@
   feature = "json",
   feature = "msgpack",
   feature = "toml",
+  feature = "xml",
   feature = "yaml"
 ))]
 
 mod common;
 
-use ::compote::{Compote, Env, Ini, Json, MsgPack, Serialized, Toml, Yaml};
+use ::compote::{Compote, Env, Ini, Json, MsgPack, Serialized, Toml, Xml, Yaml};
 
 use crate::common::{
   Database, Feature, Level, Logging, Owner, Pool, Replica, Server, Settings, Target, Tls, fixture, map, strings,
@@ -41,12 +42,13 @@ fn environment() -> Vec<(String, Option<String>)> {
   .collect()
 }
 
-/// Defaults, then the shipped file, then this host's, then the environment's, then the developer's,
-/// then the generated secrets, then the process environment. The generated layer is the binary one,
-/// which is the shape MessagePack is actually for.
+/// Defaults, then the shipped file, then policy, then this host's, then the environment's, then the
+/// developer's, then the generated secrets, then the process environment. The generated layer is the
+/// binary one, which is the shape MessagePack is actually for.
 fn stack() -> Settings {
   Compote::from(Serialized::defaults(Settings::default()))
     .merge(Toml::path(fixture("layered/base.toml")))
+    .merge(Xml::path(fixture("layered/policy.xml")))
     .merge(Ini::path(fixture("layered/host.ini")).split("."))
     .merge(Yaml::path(fixture("layered/environment.yaml")))
     .merge(Json::path(fixture("layered/local.jsonc")))
@@ -69,7 +71,7 @@ mod compote {
     use super::*;
 
     #[test]
-    fn it_merges_six_formats_into_one_value() {
+    fn it_merges_seven_formats_into_one_value() {
       assert_eq!(
         merged(),
         Settings {
@@ -77,7 +79,7 @@ mod compote {
             pool: Pool {
               // Defaulted, raised by YAML, raised again by the environment.
               idle_timeout: 45.5,
-              // Set by TOML, raised by INI's text, raised again by YAML.
+              // Set by TOML, lowered by XML's text, raised by INI's, raised again by YAML.
               max: 32,
               // Set by TOML and never touched again.
               min: 2,
@@ -91,8 +93,8 @@ mod compote {
             // TOML names a database, MessagePack replaces it with one that has credentials.
             url: "postgres://app:s3cret@db.internal/compote".to_owned(),
           },
-          // No layer mentions it, so the default survives.
-          extra: map(Vec::new()),
+          // Only XML mentions it, as two child elements of one.
+          extra: strings(vec![("region", "us-east-1"), ("tier", "gold")]),
           features: map(vec![
             // YAML introduces the key, JSON changes both of its fields.
             (
@@ -156,7 +158,7 @@ mod compote {
               ciphers: vec!["TLS_AES_128_GCM_SHA256".to_owned(), "TLS_AES_256_GCM_SHA384".to_owned(),],
               // false in TOML, true in YAML.
               enabled: true,
-              // Absent until YAML supplies it.
+              // XML sets the floor policy allows, YAML raises it.
               min_version: Some("1.3".to_owned()),
             },
           },
@@ -179,12 +181,26 @@ mod compote {
 
       assert_eq!(
         settings.database.pool.max, 32,
-        "toml's 16, then ini's text 24, then yaml's 32"
+        "toml's 16, then xml's text 12, then ini's text 24, then yaml's 32"
       );
       assert_eq!(
         settings.notes,
         vec!["handwritten", "uncommitted"],
         "a comma-separated value only ini supplies"
+      );
+      assert_eq!(
+        settings.server.tls.min_version.as_deref(),
+        Some("1.3"),
+        "xml's floor, raised by the typed layer above it"
+      );
+    }
+
+    #[test]
+    fn it_keeps_a_table_no_other_layer_names() {
+      assert_eq!(
+        merged().extra,
+        strings(vec![("region", "us-east-1"), ("tier", "gold")]),
+        "two child elements of the one element only xml supplies"
       );
     }
 

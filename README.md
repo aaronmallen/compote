@@ -32,6 +32,7 @@ Each format sits behind a feature of the same name. None are on by default, so y
 | `json`    | `.json`, `.jsonc`     | `jsonc-parser`               |
 | `msgpack` | `.msgpack`, `.mpk`    | `rmp-serde`                  |
 | `toml`    | `.toml`               | `toml_edit`                  |
+| `xml`     | `.xml`                | `roxmltree`                  |
 | `yaml`    | `.yaml`, `.yml`       | `yaml_serde`                 |
 
 `Json` reads both spellings, since JSON with comments is a superset of JSON. Comments and trailing
@@ -45,14 +46,26 @@ Json::path("config.json").strict()                                    // JSON an
 Json::path("config.json").lenient()                                   // everything the parser knows
 ```
 
-`Ini` is the one file format that is only text, which is the model the environment already uses and
-the one coercion was built for. A section is a table, and past that nothing nests until you say so,
-since INI has no depth of its own to borrow. A key said twice is the list it has no other way to
-spell.
+`Ini` and `Xml` are the file formats that are only text, which is the model the environment already
+uses and the one coercion was built for.
+
+For `Ini` a section is a table, and past that nothing nests until you say so, since INI has no depth
+of its own to borrow. A key said twice is the list it has no other way to spell.
 
 ```rust
 Ini::path("config.ini")            // `[server.tls]` is one key with a dot in it
 Ini::path("config.ini").split(".") // `[server.tls]` and `pool.max` both nest
+```
+
+`Xml` has depth already. The root element names the file rather than anything in it and is thrown
+away. A child element is a key, an attribute is a key beside it, and an element said twice is a
+list. Because a repeated element brings its own children along, that list holds tables as readily as
+strings, which is the one thing `Ini` cannot say.
+
+```rust
+Xml::path("config.xml")                       // `<server port="8443"/>` is `server.port`
+Xml::path("config.xml").attribute_prefix("@") // the same document is `server.@port`
+Xml::path("config.xml").allow_doctype()       // read a `<!DOCTYPE>` and the entities it declares
 ```
 
 `Cbor` and `MsgPack` are the binary formats, for a file something else writes rather than a person.
@@ -63,7 +76,7 @@ field names to merge on.
 
 ## Roadmap
 
-Seven sources read today, and the shape of the crate is settled. What follows is about breadth, not
+Eight sources read today, and the shape of the crate is settled. What follows is about breadth, not
 about changing how any of it works.
 
 **Likely next: `.env`.** Every value in it is text, the way INI's and the environment's are. What it

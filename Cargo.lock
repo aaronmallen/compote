@@ -55,6 +55,7 @@ dependencies = [
  "jsonc-parser",
  "pretty_assertions",
  "rmp-serde",
+ "roxmltree",
  "rust-ini",
  "serde",
  "temp-env",
@@ -338,6 +339,15 @@ checksum = "72f81bee8c8ef9b577d1681a70ebbc962c232461e397b22c208c43c04b67a155"
 dependencies = [
  "rmp",
  "serde",
+]
+
+[[package]]
+name = "roxmltree"
+version = "0.21.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1964b10c76125c36f8afe190065a4bf9a87bf324842c05701330bba9f1cacbb"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]

@@ -181,6 +181,12 @@ impl<'de> Deserializer<'de> for Value {
   {
     match self {
       Self::Table(entries) => visitor.visit_map(MapDeserializer::new(entries.into_iter())),
+      // The other half of what `deserialize_seq` already does for a list. A text-only format has
+      // one spelling for a value that holds nothing, and it has to fill an empty map as readily as
+      // an empty list. Only the empty string: there is no splitting a string into named values.
+      Self::String(value) if value.trim().is_empty() => {
+        visitor.visit_map(MapDeserializer::new(std::iter::empty::<(String, Self)>()))
+      }
       other => Err(Error::invalid_type(other.unexpected(), &visitor)),
     }
   }
@@ -631,6 +637,24 @@ mod tests {
           BTreeMap::<String, u16>::deserialize(table(vec![("port", Value::Integer(8080))])).unwrap(),
           BTreeMap::from([("port".to_owned(), 8080)])
         );
+      }
+
+      #[test]
+      fn it_reads_a_string_holding_nothing_as_an_empty_map() {
+        for empty in ["", "   "] {
+          assert_eq!(
+            BTreeMap::<String, u16>::deserialize(string(empty)).unwrap(),
+            BTreeMap::new(),
+            "{empty:?}"
+          );
+        }
+      }
+
+      #[test]
+      fn it_rejects_a_string_holding_something() {
+        let error = BTreeMap::<String, u16>::deserialize(string("port")).unwrap_err();
+
+        assert!(error.to_string().contains("invalid type"), "{error}");
       }
 
       #[test]

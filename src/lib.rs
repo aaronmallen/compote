@@ -41,9 +41,10 @@
 //!
 //! # Coercion
 //!
-//! A string becomes whatever the field asks for, so `"8080"` fills a `u16` and `"yes"` fills a `bool`.
-//! It does not work the other way, so a number never quietly fills a `String` field and hides a
-//! mistake. This is what lets environment variables, which are always text, sit beside typed files.
+//! A string becomes whatever the field asks for, so `"8080"` fills a `u16` and `"yes"` fills a `bool`,
+//! and a string holding nothing fills an empty list or an empty map. It does not work the other way,
+//! so a number never quietly fills a `String` field and hides a mistake. This is what lets
+//! environment variables, which are always text, sit beside typed files.
 //!
 //! # Formats
 //!
@@ -60,6 +61,11 @@
 //! you say [`split`](Ini::split), since INI has no depth of its own to borrow. A key said twice is
 //! the list it has no other way to spell.
 //!
+//! [`Xml`] is the other format that is only text, and the one that gets the most out of it. A child
+//! element is a key and an attribute is a key beside it, so `<server port="8443"/>` fills a struct.
+//! An element said twice is a list, and because a repeated element brings its own children along it
+//! is a list of tables as readily as a list of strings, which is the one thing [`Ini`] cannot say.
+//!
 //! [`Json`] covers both spellings, since JSON with comments is a superset of JSON. Comments and
 //! trailing commas are allowed and nothing else is, so the extension decides nothing and a file that
 //! uses neither is still held to strict JSON. Say [`strict`](Json::strict) to refuse even those, or
@@ -74,6 +80,7 @@
 //! | `json` | `.json`, `.jsonc` | `jsonc-parser` |
 //! | `msgpack` | `.msgpack`, `.mpk` | `rmp-serde` |
 //! | `toml` | `.toml` | `toml_edit` |
+//! | `xml` | `.xml` | `roxmltree` |
 //! | `yaml` | `.yaml`, `.yml` | `yaml_serde` |
 #![warn(missing_docs)]
 
@@ -96,6 +103,8 @@ pub use provider::Json;
 pub use provider::MsgPack;
 #[cfg(feature = "toml")]
 pub use provider::Toml;
+#[cfg(feature = "xml")]
+pub use provider::Xml;
 #[cfg(feature = "yaml")]
 pub use provider::Yaml;
 pub use provider::{Provider, Serialized};
