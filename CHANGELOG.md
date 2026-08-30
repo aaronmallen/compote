@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Added
+
+- An `ini` feature and an `Ini` provider, reading INI through `rust-ini`. The one file format that is
+  only text, which is the model the environment already uses. A section is a table, and past that
+  nothing nests until `Ini::split` says what to nest on, since INI has no depth of its own to borrow.
+- `Ini::split`, which nests section names and keys wherever a separator appears, so `[server.tls]`
+  under `split(".")` is `tls` inside `server` rather than one key with a dot in it.
+- An `allow_` and a `deny_` method for each syntax `Ini` can be taught: quotes, backslash escapes,
+  and values continued onto the indented lines beneath them.
+
 ## [v0.2.0] - 2026-08-28
 
 ### Changed

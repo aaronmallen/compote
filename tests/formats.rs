@@ -1,13 +1,15 @@
-//! One chain, five formats.
+//! One chain, six formats.
 //!
 //! Every source under `tests/fixtures/layered` speaks a different format and owns a different slice
 //! of the configuration. Nothing about merging is per format: each file parses into the same shape
-//! first, so a YAML table lays over a TOML one exactly as it would over another YAML one, and an
-//! environment variable, which is only ever text, lands on a numeric field at the bottom of a
-//! three-level path.
+//! first, so a YAML table lays over a TOML one exactly as it would over another YAML one, an INI
+//! file whose every value is text sits between two typed ones without either noticing, and an
+//! environment variable, which is only ever text as well, lands on a numeric field at the bottom of
+//! a three-level path.
 
 #![cfg(all(
   feature = "env",
+  feature = "ini",
   feature = "json",
   feature = "msgpack",
   feature = "toml",
@@ -16,7 +18,7 @@
 
 mod common;
 
-use ::compote::{Compote, Env, Json, MsgPack, Serialized, Toml, Yaml};
+use ::compote::{Compote, Env, Ini, Json, MsgPack, Serialized, Toml, Yaml};
 
 use crate::common::{
   Database, Feature, Level, Logging, Owner, Pool, Replica, Server, Settings, Target, Tls, fixture, map, strings,
@@ -39,12 +41,13 @@ fn environment() -> Vec<(String, Option<String>)> {
   .collect()
 }
 
-/// Defaults, then the shipped file, then the environment's file, then the developer's, then the
-/// generated secrets, then the process environment. The generated layer is the binary one, which
-/// is the shape MessagePack is actually for.
+/// Defaults, then the shipped file, then this host's, then the environment's, then the developer's,
+/// then the generated secrets, then the process environment. The generated layer is the binary one,
+/// which is the shape MessagePack is actually for.
 fn stack() -> Settings {
   Compote::from(Serialized::defaults(Settings::default()))
     .merge(Toml::path(fixture("layered/base.toml")))
+    .merge(Ini::path(fixture("layered/host.ini")).split("."))
     .merge(Yaml::path(fixture("layered/environment.yaml")))
     .merge(Json::path(fixture("layered/local.jsonc")))
     .merge(MsgPack::path(fixture("layered/secrets.msgpack")))
@@ -66,7 +69,7 @@ mod compote {
     use super::*;
 
     #[test]
-    fn it_merges_five_formats_into_one_value() {
+    fn it_merges_six_formats_into_one_value() {
       assert_eq!(
         merged(),
         Settings {
@@ -74,7 +77,7 @@ mod compote {
             pool: Pool {
               // Defaulted, raised by YAML, raised again by the environment.
               idle_timeout: 45.5,
-              // Set by TOML, raised by YAML.
+              // Set by TOML, raised by INI's text, raised again by YAML.
               max: 32,
               // Set by TOML and never touched again.
               min: 2,
@@ -123,7 +126,8 @@ mod compote {
           // Text from the environment, split on commas into a list.
           milestones: vec!["2026-01-01".to_owned(), "2026-06-15".to_owned()],
           name: "compote".to_owned(),
-          notes: Vec::new(),
+          // Only INI mentions them, as one comma-separated value.
+          notes: vec!["handwritten".to_owned(), "uncommitted".to_owned()],
           // Only the generated file knows these, and one of them is an explicit null.
           owners: vec![
             Owner {
@@ -138,7 +142,7 @@ mod compote {
           // A bare TOML date, over a default string.
           released: "2026-08-28".to_owned(),
           server: Server {
-            // "-1" from the environment onto an i32.
+            // INI's "512", then "-1" from the environment, both text onto an i32.
             backlog: -1,
             // JSON is the only layer with headers.
             headers: strings(vec![("x-powered-by", "compote")]),
@@ -167,6 +171,21 @@ mod compote {
 
       assert_eq!(pool.max, 32, "yaml raises the maximum toml set");
       assert_eq!(pool.min, 2, "and leaves the minimum beside it alone");
+    }
+
+    #[test]
+    fn it_lets_a_text_only_format_sit_between_two_typed_ones() {
+      let settings = merged();
+
+      assert_eq!(
+        settings.database.pool.max, 32,
+        "toml's 16, then ini's text 24, then yaml's 32"
+      );
+      assert_eq!(
+        settings.notes,
+        vec!["handwritten", "uncommitted"],
+        "a comma-separated value only ini supplies"
+      );
     }
 
     #[test]

@@ -28,6 +28,7 @@ Each format sits behind a feature of the same name. None are on by default, so y
 |-----------|-----------------------|------------------------------|
 | `cbor`    | `.cbor`               | `ciborium`                   |
 | `env`     | environment variables |                              |
+| `ini`     | `.ini`                | `rust-ini`                   |
 | `json`    | `.json`, `.jsonc`     | `jsonc-parser`               |
 | `msgpack` | `.msgpack`, `.mpk`    | `rmp-serde`                  |
 | `toml`    | `.toml`               | `toml_edit`                  |
@@ -44,6 +45,16 @@ Json::path("config.json").strict()                                    // JSON an
 Json::path("config.json").lenient()                                   // everything the parser knows
 ```
 
+`Ini` is the one file format that is only text, which is the model the environment already uses and
+the one coercion was built for. A section is a table, and past that nothing nests until you say so,
+since INI has no depth of its own to borrow. A key said twice is the list it has no other way to
+spell.
+
+```rust
+Ini::path("config.ini")            // `[server.tls]` is one key with a dot in it
+Ini::path("config.ini").split(".") // `[server.tls]` and `pool.max` both nest
+```
+
 `Cbor` and `MsgPack` are the binary formats, for a file something else writes rather than a person.
 Both want string keys, and both refuse raw bytes and tagged or extension values rather than guessing
 at them. `MsgPack` wants its keys from `rmp_serde::to_vec_named` rather than the compact
@@ -52,13 +63,12 @@ field names to merge on.
 
 ## Roadmap
 
-Six sources read today, and the shape of the crate is settled. What follows is about breadth, not
+Seven sources read today, and the shape of the crate is settled. What follows is about breadth, not
 about changing how any of it works.
 
-**Likely next: INI and `.env`.** Every value in both is text, which is the model the environment
-already uses and the one coercion was built for. Each needs a decision before any code: INI is two
-levels deep and `.env` is flat, so anything nested needs a convention rather than a parser. Java
-properties is the same shape again, for a narrower audience.
+**Likely next: `.env`.** Every value in it is text, the way INI's and the environment's are. What it
+still needs is the same decision INI needed: `.env` is flat, so anything nested is a convention
+rather than a parser. Java properties is the same shape again, for a narrower audience.
 
 **Maybe: KDL.** The appeal is real and so is the problem. A KDL node carries a name, positional
 arguments, named properties, and children, all at once:

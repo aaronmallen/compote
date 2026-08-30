@@ -2,7 +2,9 @@
 //!
 //! Each format under `complete/` spells the same configuration in its own idiom, so a format test
 //! is a single comparison against [`complete`]. Anything a format cannot say natively it says the
-//! nearest way it can, and the typed value it lands on has to match all the others.
+//! nearest way it can, and the typed value it lands on has to match all the others. INI is the one
+//! exception: it has no list of tables at all, so `tests/ini.rs` names the three fields it leaves
+//! empty and compares against the rest.
 
 // Every test binary pulls in this module, and none of them use all of it.
 #![allow(dead_code)]

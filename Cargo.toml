@@ -23,6 +23,7 @@ docs.rs = { all-features = true }
 [features]
 cbor = ["dep:ciborium"] # Load configuration from CBOR binaries
 env = [] # Load configuration from env
+ini = ["dep:rust_ini"] # Load configuration from INI files
 json = ["dep:jsonc-parser"] # Load configuration from JSON or JSONc files
 msgpack = ["dep:rmp-serde"] # Load configuration from RMP binaries
 toml = ["dep:toml_edit"] # Load configuration from TOML files
@@ -32,6 +33,7 @@ yaml = ["dep:yaml_serde"] # Load configuration from YAML files
 ciborium = { optional = true, version = "0.2" }
 jsonc-parser = { features = ["serde"], optional = true, version = "0.33" }
 rmp-serde = { optional = true, version = "1.3" }
+rust_ini = { default-features = false, optional = true, package = "rust-ini", version = "0.21" }
 serde = { features = ["derive"], version = "1" }
 thiserror = "2"
 toml_edit = { features = ["serde"], optional = true, version = "0.25" }

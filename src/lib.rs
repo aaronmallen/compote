@@ -55,6 +55,11 @@
 //! compact `rmp_serde::to_vec`, which turns a struct into an array of values in declaration order
 //! and leaves no field names to merge on.
 //!
+//! [`Ini`] is the one file format that is only text, which is the model the environment already
+//! uses and the one coercion was built for. A section is a table, and past that nothing nests until
+//! you say [`split`](Ini::split), since INI has no depth of its own to borrow. A key said twice is
+//! the list it has no other way to spell.
+//!
 //! [`Json`] covers both spellings, since JSON with comments is a superset of JSON. Comments and
 //! trailing commas are allowed and nothing else is, so the extension decides nothing and a file that
 //! uses neither is still held to strict JSON. Say [`strict`](Json::strict) to refuse even those, or
@@ -65,6 +70,7 @@
 //! | --- | --- | --- |
 //! | `cbor` | `.cbor` | `ciborium` |
 //! | `env` | environment variables | |
+//! | `ini` | `.ini` | `rust-ini` |
 //! | `json` | `.json`, `.jsonc` | `jsonc-parser` |
 //! | `msgpack` | `.msgpack`, `.mpk` | `rmp-serde` |
 //! | `toml` | `.toml` | `toml_edit` |
@@ -82,6 +88,8 @@ pub use error::{Error, Result};
 pub use provider::Cbor;
 #[cfg(feature = "env")]
 pub use provider::Env;
+#[cfg(feature = "ini")]
+pub use provider::Ini;
 #[cfg(feature = "json")]
 pub use provider::Json;
 #[cfg(feature = "msgpack")]

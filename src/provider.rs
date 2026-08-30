@@ -2,6 +2,8 @@
 mod cbor;
 #[cfg(feature = "env")]
 mod env;
+#[cfg(feature = "ini")]
+mod ini;
 #[cfg(feature = "json")]
 mod json;
 #[cfg(feature = "msgpack")]
@@ -16,6 +18,8 @@ mod yaml;
 pub use cbor::Cbor;
 #[cfg(feature = "env")]
 pub use env::Env;
+#[cfg(feature = "ini")]
+pub use ini::Ini;
 #[cfg(feature = "json")]
 pub use json::Json;
 #[cfg(feature = "msgpack")]
@@ -58,6 +62,7 @@ pub trait Provider {
 /// absent key says, so it lays over the layer beneath without taking anything from it.
 #[cfg(any(
   feature = "cbor",
+  feature = "ini",
   feature = "json",
   feature = "msgpack",
   feature = "toml",
@@ -79,7 +84,7 @@ where
 }
 
 /// Reads a text file and hands its contents to `parse`.
-#[cfg(any(feature = "json", feature = "toml", feature = "yaml"))]
+#[cfg(any(feature = "ini", feature = "json", feature = "toml", feature = "yaml"))]
 fn load<E>(path: &std::path::Path, parse: impl FnOnce(&str) -> std::result::Result<Value, E>) -> Result<Value>
 where
   E: std::error::Error + Send + Sync + 'static,
