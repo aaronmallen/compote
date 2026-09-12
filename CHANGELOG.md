@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [v0.3.0] - 2026-09-11
+
 ### Changed
 
 - A file that is not there now reads as an empty table, the way an empty file already did, for every
@@ -112,6 +114,7 @@ Initial release
 [Keep a Changelog]: https://keepachangelog.com/en/1.1.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-[Unreleased]: https://github.com/aaronmallen/compote/compare/0.2.1...HEAD
+[Unreleased]: https://github.com/aaronmallen/compote/compare/0.3.0...HEAD
+[v0.3.0]: https://github.com/aaronmallen/compote/compare/0.2.1...0.3.0
 [v0.2.1]: https://github.com/aaronmallen/compote/compare/0.2.0...0.2.1
 [v0.2.0]: https://github.com/aaronmallen/compote/compare/3892304c...0.2.0

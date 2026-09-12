@@ -70,8 +70,8 @@ Include:
 
 | Version |    Support    |
 |:-------:|:-------------:|
-|  0.2.X  |   Supported   |
-| > 0.2.X | Not Supported |
+|  0.3.X  |   Supported   |
+| < 0.3.X | Not Supported |
 
 ## Rules for Contributors
 
