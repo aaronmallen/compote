@@ -143,8 +143,16 @@ mod ini {
     }
 
     #[test]
-    fn it_reports_the_path_of_a_file_it_cannot_read() {
-      let error = Compote::from(Ini::path(fixture("complete/missing.ini")))
+    fn it_reads_a_file_that_is_not_there_as_an_empty_table() {
+      assert_eq!(
+        Ini::path(fixture("complete/missing.ini")).data().unwrap(),
+        Value::table()
+      );
+    }
+
+    #[test]
+    fn it_reports_the_path_of_a_required_file_that_is_not_there() {
+      let error = Compote::from(Ini::path(fixture("complete/missing.ini")).required())
         .extract::<Settings>()
         .unwrap_err();
 

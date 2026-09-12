@@ -17,8 +17,9 @@ use crate::{Provider, Result, Value};
 /// MessagePack's `bin` and `ext` families, timestamps among them, have no place in configuration and
 /// are refused rather than guessed at.
 ///
-/// An empty file, or one holding only a nil document, reads as an empty table rather than an error,
-/// so an optional file costs nothing.
+/// A file that is not there, an empty file, or one holding only a nil document reads as an empty
+/// table rather than an error, so an optional file costs nothing. Say
+/// [`required`](MsgPack::required) when a missing file is a mistake.
 ///
 /// ```no_run
 /// use compote::{Compote, MsgPack};
@@ -34,22 +35,43 @@ use crate::{Provider, Result, Value};
 /// ```
 pub struct MsgPack {
   path: PathBuf,
+  required: bool,
 }
 
 impl MsgPack {
+  /// Reads a file that is not there as an empty table. On unless [`required`](MsgPack::required)
+  /// says otherwise.
+  pub fn optional(mut self) -> Self {
+    self.required = false;
+
+    self
+  }
+
   /// Reads the file at `path`.
   ///
   /// Nothing is read until the source is merged, and it is read again each time it is.
   pub fn path(path: impl Into<PathBuf>) -> Self {
     Self {
       path: path.into(),
+      required: false,
     }
+  }
+
+  /// Reads a file that is not there as an error.
+  ///
+  /// For a path someone named on purpose, like one passed on the command line, where a missing file
+  /// is a typo rather than a machine nobody has configured yet. A file that is there and cannot be
+  /// read is an error either way.
+  pub fn required(mut self) -> Self {
+    self.required = true;
+
+    self
   }
 }
 
 impl Provider for MsgPack {
   fn data(&self) -> Result<Value> {
-    super::load_bytes(&self.path, |source| rmp_serde::from_slice(source))
+    super::load_bytes(&self.path, self.required, |source| rmp_serde::from_slice(source))
   }
 }
 
@@ -135,8 +157,8 @@ mod tests {
       }
 
       #[test]
-      fn it_reports_a_file_it_cannot_read() {
-        let error = MsgPack::path("/does/not/exist.msgpack").data().unwrap_err();
+      fn it_reports_a_required_file_it_cannot_read() {
+        let error = MsgPack::path("/does/not/exist.msgpack").required().data().unwrap_err();
 
         assert!(error.to_string().starts_with("failed to read"), "{error}");
       }

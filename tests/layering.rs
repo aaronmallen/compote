@@ -53,6 +53,18 @@ mod compote {
     }
 
     #[test]
+    fn it_keeps_the_defaults_when_a_file_is_not_there() {
+      let directory = tempfile::tempdir().unwrap();
+
+      let settings: Settings = Compote::from(Serialized::defaults(Settings::default()))
+        .merge(Toml::path(directory.path().join("config.toml")))
+        .extract()
+        .unwrap();
+
+      assert_eq!(settings, Settings::default());
+    }
+
+    #[test]
     fn it_lets_each_layer_beat_the_one_before_it() {
       let parent = file("host = \"parent\"\nport = 8080\n", ".toml");
       let child = file(r#"{"host": "child", "tags": "web, api"}"#, ".json");

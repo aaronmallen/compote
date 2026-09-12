@@ -20,6 +20,16 @@ let settings: Settings = Compote::from(Serialized::defaults(Settings::default())
 
 Every `merge` beats the one before it. Here the child file beats its parent, and the environment beats both.
 
+A file that is not there reads as empty, the same as an empty file, so the layers beneath it stand and a
+machine nobody has configured yet still starts. A path someone named on purpose can say otherwise:
+
+```rust
+Toml::path(default_path)        // not there is nothing
+Toml::path(cli_path).required() // not there is an error
+```
+
+Only not being there is forgiven. A file that is there and cannot be read is always an error.
+
 ## Formats
 
 Each format sits behind a feature of the same name. None are on by default, so you pay for what you read.

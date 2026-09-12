@@ -8,7 +8,7 @@
 
 mod common;
 
-use compote::{Compote, Json};
+use compote::{Compote, Json, Provider, Value};
 
 use crate::common::{Settings, complete, fixture};
 
@@ -89,8 +89,16 @@ mod json {
     }
 
     #[test]
-    fn it_reports_the_path_of_a_file_it_cannot_read() {
-      let error = Compote::from(Json::path(fixture("complete/missing.json")))
+    fn it_reads_a_file_that_is_not_there_as_an_empty_table() {
+      assert_eq!(
+        Json::path(fixture("complete/missing.json")).data().unwrap(),
+        Value::table()
+      );
+    }
+
+    #[test]
+    fn it_reports_the_path_of_a_required_file_that_is_not_there() {
+      let error = Compote::from(Json::path(fixture("complete/missing.json")).required())
         .extract::<Settings>()
         .unwrap_err();
 
@@ -150,8 +158,8 @@ mod json {
     }
 
     #[test]
-    fn it_reports_the_path_of_a_file_it_cannot_read() {
-      let error = Compote::from(Json::path(fixture("complete/missing.jsonc")))
+    fn it_reports_the_path_of_a_required_file_that_is_not_there() {
+      let error = Compote::from(Json::path(fixture("complete/missing.jsonc")).required())
         .extract::<Settings>()
         .unwrap_err();
 

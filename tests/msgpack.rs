@@ -12,7 +12,7 @@
 
 mod common;
 
-use compote::{Compote, MsgPack};
+use compote::{Compote, MsgPack, Provider, Value};
 
 use crate::common::{Settings, complete, fixture};
 
@@ -91,8 +91,16 @@ mod msgpack {
     }
 
     #[test]
-    fn it_reports_the_path_of_a_file_it_cannot_read() {
-      let error = Compote::from(MsgPack::path(fixture("complete/missing.msgpack")))
+    fn it_reads_a_file_that_is_not_there_as_an_empty_table() {
+      assert_eq!(
+        MsgPack::path(fixture("complete/missing.msgpack")).data().unwrap(),
+        Value::table()
+      );
+    }
+
+    #[test]
+    fn it_reports_the_path_of_a_required_file_that_is_not_there() {
+      let error = Compote::from(MsgPack::path(fixture("complete/missing.msgpack")).required())
         .extract::<Settings>()
         .unwrap_err();
 

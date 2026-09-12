@@ -12,7 +12,7 @@
 
 mod common;
 
-use compote::{Cbor, Compote};
+use compote::{Cbor, Compote, Provider, Value};
 
 use crate::common::{Settings, complete, fixture};
 
@@ -98,8 +98,16 @@ mod cbor {
     }
 
     #[test]
-    fn it_reports_the_path_of_a_file_it_cannot_read() {
-      let error = Compote::from(Cbor::path(fixture("complete/missing.cbor")))
+    fn it_reads_a_file_that_is_not_there_as_an_empty_table() {
+      assert_eq!(
+        Cbor::path(fixture("complete/missing.cbor")).data().unwrap(),
+        Value::table()
+      );
+    }
+
+    #[test]
+    fn it_reports_the_path_of_a_required_file_that_is_not_there() {
+      let error = Compote::from(Cbor::path(fixture("complete/missing.cbor")).required())
         .extract::<Settings>()
         .unwrap_err();
 

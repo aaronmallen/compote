@@ -2,7 +2,7 @@
 
 mod common;
 
-use compote::{Compote, Toml};
+use compote::{Compote, Provider, Toml, Value};
 use serde::Deserialize;
 
 use crate::common::{Settings, complete, fixture};
@@ -89,13 +89,35 @@ mod toml {
     }
 
     #[test]
-    fn it_reports_the_path_of_a_file_it_cannot_read() {
-      let error = Compote::from(Toml::path(fixture("complete/missing.toml")))
+    fn it_reads_a_file_that_is_not_there_as_an_empty_table() {
+      assert_eq!(
+        Toml::path(fixture("complete/missing.toml")).data().unwrap(),
+        Value::table()
+      );
+    }
+
+    #[test]
+    fn it_reads_a_file_that_is_not_there_as_an_empty_table_when_made_optional_again() {
+      let toml = Toml::path(fixture("complete/missing.toml")).required().optional();
+
+      assert_eq!(toml.data().unwrap(), Value::table());
+    }
+
+    #[test]
+    fn it_reports_the_path_of_a_required_file_that_is_not_there() {
+      let error = Compote::from(Toml::path(fixture("complete/missing.toml")).required())
         .extract::<Settings>()
         .unwrap_err();
 
       assert!(error.to_string().starts_with("failed to read"), "{error}");
       assert!(error.to_string().contains("missing.toml"), "{error}");
+    }
+
+    #[test]
+    fn it_reports_a_file_that_is_there_but_cannot_be_read_even_when_optional() {
+      let error = Toml::path(fixture("complete")).data().unwrap_err();
+
+      assert!(error.to_string().starts_with("failed to read"), "{error}");
     }
 
     #[test]

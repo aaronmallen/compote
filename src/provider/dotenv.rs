@@ -45,8 +45,9 @@ use crate::{Provider, Result, Value};
 /// so `$DATABASE__HOST` is the name `DATABASE` followed by the text `__HOST`, while
 /// `${DATABASE__HOST}` is the one name it looks like.
 ///
-/// An empty file, or one holding only comments, reads as an empty table rather than an error, so an
-/// optional file costs nothing.
+/// A file that is not there, an empty file, or one holding only comments reads as an empty table
+/// rather than an error, so an optional file costs nothing. Say [`required`](Dotenv::required) when
+/// a missing file is a mistake.
 ///
 /// ```no_run
 /// use compote::{Compote, Dotenv};
@@ -64,6 +65,7 @@ pub struct Dotenv {
   ignore: Vec<String>,
   path: PathBuf,
   prefix: String,
+  required: bool,
   separator: String,
 }
 
@@ -79,6 +81,14 @@ impl Dotenv {
     self
   }
 
+  /// Reads a file that is not there as an empty table. On unless [`required`](Dotenv::required)
+  /// says otherwise.
+  pub fn optional(mut self) -> Self {
+    self.required = false;
+
+    self
+  }
+
   /// Reads the file at `path`.
   ///
   /// Nothing is read until the source is merged, and it is read again each time it is.
@@ -87,6 +97,7 @@ impl Dotenv {
       ignore: Vec::new(),
       path: path.into(),
       prefix: String::new(),
+      required: false,
       separator: String::new(),
     }
   }
@@ -98,6 +109,17 @@ impl Dotenv {
   /// anyway, because the same names are meant to be exported.
   pub fn prefixed(mut self, prefix: &str) -> Self {
     self.prefix = prefix.to_owned();
+
+    self
+  }
+
+  /// Reads a file that is not there as an error.
+  ///
+  /// For a path someone named on purpose, like one passed on the command line, where a missing file
+  /// is a typo rather than a machine nobody has configured yet. A file that is there and cannot be
+  /// read is an error either way.
+  pub fn required(mut self) -> Self {
+    self.required = true;
 
     self
   }
@@ -114,7 +136,7 @@ impl Dotenv {
 
 impl Provider for Dotenv {
   fn data(&self) -> Result<Value> {
-    super::load(&self.path, |source| {
+    super::load(&self.path, self.required, |source| {
       dotenvy::Iter::new(source.as_bytes())
         .collect::<std::result::Result<Vec<(String, String)>, _>>()
         .map(|pairs| super::overlay(pairs, &self.prefix, &self.ignore, &self.separator))
@@ -322,8 +344,8 @@ mod tests {
       }
 
       #[test]
-      fn it_reports_a_file_it_cannot_read() {
-        let error = Dotenv::path("/does/not/exist.env").data().unwrap_err();
+      fn it_reports_a_required_file_it_cannot_read() {
+        let error = Dotenv::path("/does/not/exist.env").required().data().unwrap_err();
 
         assert!(error.to_string().starts_with("failed to read"), "{error}");
       }

@@ -49,7 +49,8 @@ const TEXT_KEY: &str = "$text";
 /// A `<!DOCTYPE>` is refused until [`allow_doctype`](Xml::allow_doctype) says otherwise, since a DTD
 /// can define entities that expand into far more than the file appears to hold.
 ///
-/// An empty file reads as an empty table rather than an error, so an optional file costs nothing. A
+/// A file that is not there, or an empty one, reads as an empty table rather than an error, so an
+/// optional file costs nothing. Say [`required`](Xml::required) when a missing file is a mistake. A
 /// file holding anything other than one root element is not XML, and is reported as a parse
 /// failure.
 ///
@@ -69,6 +70,7 @@ pub struct Xml {
   attribute_prefix: String,
   doctype: bool,
   path: PathBuf,
+  required: bool,
   text_key: String,
 }
 
@@ -113,6 +115,14 @@ impl Xml {
     self
   }
 
+  /// Reads a file that is not there as an empty table. On unless [`required`](Xml::required) says
+  /// otherwise.
+  pub fn optional(mut self) -> Self {
+    self.required = false;
+
+    self
+  }
+
   /// Reads the file at `path`.
   ///
   /// Nothing is read until the source is merged, and it is read again each time it is.
@@ -121,8 +131,20 @@ impl Xml {
       attribute_prefix: String::new(),
       doctype: false,
       path: path.into(),
+      required: false,
       text_key: TEXT_KEY.to_owned(),
     }
+  }
+
+  /// Reads a file that is not there as an error.
+  ///
+  /// For a path someone named on purpose, like one passed on the command line, where a missing file
+  /// is a typo rather than a machine nobody has configured yet. A file that is there and cannot be
+  /// read is an error either way.
+  pub fn required(mut self) -> Self {
+    self.required = true;
+
+    self
   }
 
   /// Names the key an element's own text lands under when it also carries attributes or children.
@@ -200,7 +222,7 @@ impl Xml {
 
 impl Provider for Xml {
   fn data(&self) -> Result<Value> {
-    super::load(&self.path, |source| {
+    super::load(&self.path, self.required, |source| {
       Document::parse_with_options(source, self.options()).map(|document| self.overlay(&document))
     })
   }
@@ -453,8 +475,8 @@ mod tests {
       }
 
       #[test]
-      fn it_reports_a_file_it_cannot_read() {
-        let error = Xml::path("/does/not/exist.xml").data().unwrap_err();
+      fn it_reports_a_required_file_it_cannot_read() {
+        let error = Xml::path("/does/not/exist.xml").required().data().unwrap_err();
 
         assert!(error.to_string().starts_with("failed to read"), "{error}");
       }

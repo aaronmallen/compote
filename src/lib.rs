@@ -39,6 +39,13 @@
 //! without taking a key that is already set, which is what you want when walking outward from the
 //! nearest configuration file to the furthest.
 //!
+//! # Missing files
+//!
+//! A file that is not there reads as an empty table, the same as an empty file, so a layer for a
+//! machine nobody has configured yet costs nothing and the layers beneath it stand. Say `required()`
+//! on a path someone named on purpose, where a missing file is a typo. Only not being there is
+//! forgiven: a file that is there and cannot be read is always an error.
+//!
 //! # Coercion
 //!
 //! A string becomes whatever the field asks for, so `"8080"` fills a `u16` and `"yes"` fills a `bool`,

@@ -109,14 +109,17 @@ where
   feature = "xml",
   feature = "yaml"
 ))]
-fn load<E>(path: &std::path::Path, parse: impl FnOnce(&str) -> std::result::Result<Value, E>) -> Result<Value>
+fn load<E>(
+  path: &std::path::Path,
+  required: bool,
+  parse: impl FnOnce(&str) -> std::result::Result<Value, E>,
+) -> Result<Value>
 where
   E: std::error::Error + Send + Sync + 'static,
 {
-  let source = std::fs::read_to_string(path).map_err(|source| crate::Error::Read {
-    path: path.to_path_buf(),
-    source,
-  })?;
+  let Some(source) = read(path, required, std::fs::read_to_string(path))? else {
+    return Ok(Value::table());
+  };
 
   if source.trim().is_empty() {
     return Ok(Value::table());
@@ -127,20 +130,50 @@ where
 
 /// Reads a binary file and hands its bytes to `parse`.
 #[cfg(any(feature = "cbor", feature = "msgpack"))]
-fn load_bytes<E>(path: &std::path::Path, parse: impl FnOnce(&[u8]) -> std::result::Result<Value, E>) -> Result<Value>
+fn load_bytes<E>(
+  path: &std::path::Path,
+  required: bool,
+  parse: impl FnOnce(&[u8]) -> std::result::Result<Value, E>,
+) -> Result<Value>
 where
   E: std::error::Error + Send + Sync + 'static,
 {
-  let source = std::fs::read(path).map_err(|source| crate::Error::Read {
-    path: path.to_path_buf(),
-    source,
-  })?;
+  let Some(source) = read(path, required, std::fs::read(path))? else {
+    return Ok(Value::table());
+  };
 
   if source.is_empty() {
     return Ok(Value::table());
   }
 
   finish(path, parse(&source))
+}
+
+/// Names the file a read failed on, and reads a file that is not there as nothing unless `required`.
+///
+/// A file that is not there has nothing to contribute to a merge, the same as an empty one, so a
+/// layer for the machine that has not been set up yet costs nothing. Not being there is the only
+/// failure forgiven. A file that is there and cannot be read, a directory or one without permission,
+/// is still an error, since it says something is wrong rather than that nothing was written yet.
+#[cfg(any(
+  feature = "cbor",
+  feature = "dotenv",
+  feature = "ini",
+  feature = "json",
+  feature = "msgpack",
+  feature = "toml",
+  feature = "xml",
+  feature = "yaml"
+))]
+fn read<T>(path: &std::path::Path, required: bool, contents: std::io::Result<T>) -> Result<Option<T>> {
+  match contents {
+    Ok(contents) => Ok(Some(contents)),
+    Err(source) if source.kind() == std::io::ErrorKind::NotFound && !required => Ok(None),
+    Err(source) => Err(crate::Error::Read {
+      path: path.to_path_buf(),
+      source,
+    }),
+  }
 }
 
 /// Turns text pairs into a table, which is the shape the environment and a `.env` file share.

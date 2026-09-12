@@ -140,8 +140,16 @@ mod xml {
     }
 
     #[test]
-    fn it_reports_the_path_of_a_file_it_cannot_read() {
-      let error = Compote::from(Xml::path(fixture("complete/missing.xml")))
+    fn it_reads_a_file_that_is_not_there_as_an_empty_table() {
+      assert_eq!(
+        Xml::path(fixture("complete/missing.xml")).data().unwrap(),
+        Value::table()
+      );
+    }
+
+    #[test]
+    fn it_reports_the_path_of_a_required_file_that_is_not_there() {
+      let error = Compote::from(Xml::path(fixture("complete/missing.xml")).required())
         .extract::<Settings>()
         .unwrap_err();
 

@@ -6,8 +6,9 @@ use crate::{Provider, Result, Value};
 ///
 /// Parsed by `yaml_serde`, which is maintained, rather than the deprecated `serde_yaml`.
 ///
-/// An empty file, or one holding only a null document, reads as an empty table rather than an
-/// error, so an optional file costs nothing.
+/// A file that is not there, an empty file, or one holding only a null document reads as an empty
+/// table rather than an error, so an optional file costs nothing. Say
+/// [`required`](Yaml::required) when a missing file is a mistake.
 ///
 /// ```no_run
 /// use compote::{Compote, Yaml};
@@ -23,22 +24,43 @@ use crate::{Provider, Result, Value};
 /// ```
 pub struct Yaml {
   path: PathBuf,
+  required: bool,
 }
 
 impl Yaml {
+  /// Reads a file that is not there as an empty table. On unless [`required`](Yaml::required) says
+  /// otherwise.
+  pub fn optional(mut self) -> Self {
+    self.required = false;
+
+    self
+  }
+
   /// Reads the file at `path`.
   ///
   /// Nothing is read until the source is merged, and it is read again each time it is.
   pub fn path(path: impl Into<PathBuf>) -> Self {
     Self {
       path: path.into(),
+      required: false,
     }
+  }
+
+  /// Reads a file that is not there as an error.
+  ///
+  /// For a path someone named on purpose, like one passed on the command line, where a missing file
+  /// is a typo rather than a machine nobody has configured yet. A file that is there and cannot be
+  /// read is an error either way.
+  pub fn required(mut self) -> Self {
+    self.required = true;
+
+    self
   }
 }
 
 impl Provider for Yaml {
   fn data(&self) -> Result<Value> {
-    super::load(&self.path, |source| yaml_serde::from_str(source))
+    super::load(&self.path, self.required, |source| yaml_serde::from_str(source))
   }
 }
 

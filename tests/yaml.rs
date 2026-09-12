@@ -2,7 +2,7 @@
 
 mod common;
 
-use compote::{Compote, Yaml};
+use compote::{Compote, Provider, Value, Yaml};
 use serde::Deserialize;
 
 use crate::common::{Settings, complete, fixture};
@@ -97,8 +97,16 @@ mod yaml {
     }
 
     #[test]
-    fn it_reports_the_path_of_a_file_it_cannot_read() {
-      let error = Compote::from(Yaml::path(fixture("complete/missing.yaml")))
+    fn it_reads_a_file_that_is_not_there_as_an_empty_table() {
+      assert_eq!(
+        Yaml::path(fixture("complete/missing.yaml")).data().unwrap(),
+        Value::table()
+      );
+    }
+
+    #[test]
+    fn it_reports_the_path_of_a_required_file_that_is_not_there() {
+      let error = Compote::from(Yaml::path(fixture("complete/missing.yaml")).required())
         .extract::<Settings>()
         .unwrap_err();
 

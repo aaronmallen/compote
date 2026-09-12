@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Changed
+
+- A file that is not there now reads as an empty table, the way an empty file already did, for every
+  file format. It was an error, which made the ordinary chain of defaults, then a file, then the
+  environment fail on any machine that had not written the file yet, and it was the one place
+  Compote parted from Figment's behavior without meaning to. Only not being there is forgiven: a
+  file that is there and cannot be read, a directory or one without permission, is still an error.
+  Anyone relying on a missing file failing now needs `required()`.
+
+### Added
+
+- `required` and `optional` on `Cbor`, `Dotenv`, `Ini`, `Json`, `MsgPack`, `Toml`, `Xml`, and
+  `Yaml`. `required` makes a file that is not there an error again, for a path someone named on
+  purpose, where a missing file is a typo rather than a machine nobody has configured yet.
+  `optional` is the default, and is there to take `required` back.
+
 ## [v0.2.1] - 2026-08-30
 
 ### Changed

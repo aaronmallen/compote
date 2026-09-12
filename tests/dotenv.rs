@@ -160,8 +160,16 @@ mod dotenv {
     }
 
     #[test]
-    fn it_reports_the_path_of_a_file_it_cannot_read() {
-      let error = Compote::from(Dotenv::path(fixture("complete/missing.env")))
+    fn it_reads_a_file_that_is_not_there_as_an_empty_table() {
+      assert_eq!(
+        Dotenv::path(fixture("complete/missing.env")).data().unwrap(),
+        Value::table()
+      );
+    }
+
+    #[test]
+    fn it_reports_the_path_of_a_required_file_that_is_not_there() {
+      let error = Compote::from(Dotenv::path(fixture("complete/missing.env")).required())
         .extract::<Settings>()
         .unwrap_err();
 

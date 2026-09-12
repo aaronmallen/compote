@@ -9,8 +9,9 @@ const DATETIME_KEY: &str = "$__toml_private_datetime";
 /// Dates and times arrive as strings, since configuration rarely wants a date type and every format
 /// here has to agree on one shape.
 ///
-/// An empty file, or one holding only a null document, reads as an empty table rather than an
-/// error, so an optional file costs nothing.
+/// A file that is not there, an empty file, or one holding only a null document reads as an empty
+/// table rather than an error, so an optional file costs nothing. Say
+/// [`required`](Toml::required) when a missing file is a mistake.
 ///
 /// ```no_run
 /// use compote::{Compote, Toml};
@@ -26,22 +27,45 @@ const DATETIME_KEY: &str = "$__toml_private_datetime";
 /// ```
 pub struct Toml {
   path: PathBuf,
+  required: bool,
 }
 
 impl Toml {
+  /// Reads a file that is not there as an empty table. On unless [`required`](Toml::required) says
+  /// otherwise.
+  pub fn optional(mut self) -> Self {
+    self.required = false;
+
+    self
+  }
+
   /// Reads the file at `path`.
   ///
   /// Nothing is read until the source is merged, and it is read again each time it is.
   pub fn path(path: impl Into<PathBuf>) -> Self {
     Self {
       path: path.into(),
+      required: false,
     }
+  }
+
+  /// Reads a file that is not there as an error.
+  ///
+  /// For a path someone named on purpose, like one passed on the command line, where a missing file
+  /// is a typo rather than a machine nobody has configured yet. A file that is there and cannot be
+  /// read is an error either way.
+  pub fn required(mut self) -> Self {
+    self.required = true;
+
+    self
   }
 }
 
 impl Provider for Toml {
   fn data(&self) -> Result<Value> {
-    super::load(&self.path, |source| toml_edit::de::from_str(source).map(flatten))
+    super::load(&self.path, self.required, |source| {
+      toml_edit::de::from_str(source).map(flatten)
+    })
   }
 }
 
