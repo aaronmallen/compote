@@ -1,0 +1,15 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.zst binary
+*.cbor binary
+*.msgpack binary
+*.mpk binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

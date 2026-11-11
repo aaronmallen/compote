@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The complete configuration, spelled in XML.
+
+  Uses attributes and child elements side by side, repeated elements for every list, a repeated
+  element carrying children for a list of tables, a character reference, and a CDATA section, so the
+  reader has to handle every shape XML offers.
+
+  Nothing here says what anything is. Every value reaches its field as text and is coerced there,
+  the way an environment variable is. Unlike INI this still spells the whole fixture: a repeated
+  element brings its own children along, so `database.replicas`, `owners`, and the file entry under
+  `logging.targets` are all sayable.
+-->
+<config>
+  <name>Compote — ünïcode ✓</name>
+  <released>2026-08-28</released>
+
+  <!-- A repeated element is the list XML has. -->
+  <milestones>2026-01-01</milestones>
+  <milestones>2026-06-15</milestones>
+  <tags>api</tags>
+  <tags>web</tags>
+
+  <!-- Nothing inside. An element holding nothing is the empty string, which fills either. -->
+  <extra/>
+  <notes/>
+
+  <server backlog="-1" host="0.0.0.0" max_body_bytes="4294967296" port="8443">
+    <headers>
+      <!-- A character reference, which splits the value into pieces the reader has to join. -->
+      <x-greeting>hello&#9;world</x-greeting>
+      <x-powered-by>compote</x-powered-by>
+    </headers>
+
+    <!-- Attributes and children in one element. -->
+    <tls enabled="true" min_version="1.3">
+      <ciphers>TLS_AES_128_GCM_SHA256</ciphers>
+      <ciphers>TLS_AES_256_GCM_SHA384</ciphers>
+    </tls>
+  </server>
+
+  <database>
+    <!-- A URL keeps its slashes and colons, so CDATA is not needed here. It is used anyway. -->
+    <url><![CDATA[postgres://localhost/compote]]></url>
+    <pool idle_timeout="30.5" max="32" min="4"/>
+
+    <!-- A repeated element with children of its own: the list of tables INI could not say. -->
+    <replicas host="replica-1.internal" port="5432" weight="0.75"/>
+    <replicas host="replica-2.internal" port="5433" weight="0.25"/>
+  </database>
+
+  <features>
+    <beta-ui enabled="true" rollout="0.05"/>
+    <metrics enabled="true" rollout="1.0"/>
+    <tracing enabled="false" rollout="0.0"/>
+  </features>
+
+  <logging>
+    <level>info</level>
+
+    <!-- A unit variant is a bare word, and a struct variant is a table with one key. -->
+    <targets>stdout</targets>
+    <targets>
+      <file>
+        <path>/var/log/compote.log</path>
+        <rotate>true</rotate>
+      </file>
+    </targets>
+  </logging>
+
+  <owners>
+    <email>hello@aaronmallen.me</email>
+    <name>Aaron</name>
+  </owners>
+
+  <!-- No email. The key is simply absent, which is how XML says nothing at all. -->
+  <owners>
+    <name>Ops</name>
+  </owners>
+</config>

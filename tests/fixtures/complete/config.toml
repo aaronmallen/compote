@@ -1,0 +1,64 @@
+# The complete configuration, spelled in TOML.
+#
+# Uses multi-line strings, literal strings, bare dates, dotted keys, inline tables, and arrays of
+# tables, so the reader has to handle every shape TOML offers.
+
+name = """
+Compote — ünïcode ✓"""
+released = 2026-08-28
+milestones = [2026-01-01, 2026-06-15]
+notes = []
+tags = ["api", "web"]
+
+[extra]
+
+[server]
+backlog = -1
+host = "0.0.0.0"
+max_body_bytes = 4294967296
+port = 8443
+
+[server.headers]
+x-greeting = "hello\tworld"
+x-powered-by = "compote"
+
+[server.tls]
+ciphers = ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"]
+enabled = true
+min_version = "1.3"
+
+[database]
+url = 'postgres://localhost/compote'
+pool.idle_timeout = 30.5
+pool.max = 32
+pool.min = 4
+
+[[database.replicas]]
+host = "replica-1.internal"
+port = 5432
+weight = 0.75
+
+[[database.replicas]]
+host = "replica-2.internal"
+port = 5433
+weight = 0.25
+
+[features]
+beta-ui = { enabled = true, rollout = 5e-2 }
+metrics = { enabled = true, rollout = 1.0 }
+tracing = { enabled = false, rollout = 0.0 }
+
+[logging]
+level = "info"
+targets = [
+  "stdout",
+  { file = { path = "/var/log/compote.log", rotate = true } },
+]
+
+[[owners]]
+email = "hello@aaronmallen.me"
+name = "Aaron"
+
+# No email. TOML has no null, so the key is simply absent.
+[[owners]]
+name = "Ops"

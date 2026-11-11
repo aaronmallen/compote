@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Layer 2. The policy this deployment is held to.
+
+  Every value here is text, the way XML's always are, and it lands between two typed files. The
+  minimum TLS version is the floor policy sets and production later raises.
+-->
+<policy>
+  <!-- Nothing else in the chain says anything about these, so they survive to the end. -->
+  <extra>
+    <region>us-east-1</region>
+    <tier>gold</tier>
+  </extra>
+
+  <database>
+    <pool max="12"/>
+  </database>
+
+  <server>
+    <tls min_version="1.2"/>
+  </server>
+</policy>

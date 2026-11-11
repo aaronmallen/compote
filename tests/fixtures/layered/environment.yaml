@@ -1,0 +1,26 @@
+# Layer 2. What production changes about the base.
+
+tags: [api, web]
+
+server:
+  port: 8443
+  tls:
+    enabled: true
+    min_version: "1.3"
+
+database:
+  pool:
+    idle_timeout: 30.5
+    max: 32
+  replicas:
+    - host: replica-1.internal
+      port: 5432
+      weight: 0.75
+
+logging:
+  level: info
+
+features:
+  beta-ui:
+    enabled: false
+    rollout: 0.0
