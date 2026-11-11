@@ -96,7 +96,7 @@ jobs:
         run: cargo build --locked --no-default-features --features ${{ matrix.feature }}
 
   release:
-    name: Create release
+    name: Publish release
     if: forgejo.event_name == 'push' && startsWith(forgejo.ref, 'refs/tags/')
     needs:
       - lint
@@ -107,6 +107,15 @@ jobs:
     steps:
       - name: Checkout
         uses: https://code.forgejo.org/actions/checkout@v7
+
+      - name: Install tools
+        uses: https://github.com/jdx/mise-action@v4
+
+      - name: Publish packages
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          CARGO_REGISTRIES_FORGEJO_TOKEN: Bearer ${{ forgejo.token }}
+        run: mise run publish
 
       - name: Extract release notes
         env:
