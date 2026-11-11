@@ -23,12 +23,12 @@ depends = ["lint:**"]
 "cargo:cargo-nextest" = "latest"
 "cargo:cargo-outdated" = "latest"
 "cargo:cargo-sort" = "latest"
+"github:jdx/usage" = "latest"
 editorconfig-checker = "latest"
 markdownlint-cli2 = "latest"
 shellcheck = "latest"
 shfmt = "latest"
 taplo = "latest"
-usage = "latest"
 yamlfmt = "latest"
 
 [[tools.rust]]
