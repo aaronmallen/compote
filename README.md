@@ -1,5 +1,7 @@
 # Compote
 
+[![Discord][discord-badge]][discord-link]
+
 Compote reads your configuration from files and the environment, merges it in the order you choose, and
 returns one typed value.
 
@@ -154,6 +156,9 @@ parser that is still maintained, but the design is Figment's.
 
 Compote is licensed under the [MIT License]
 
+[discord-badge]:
+https://img.shields.io/discord/1441938388780585062?style=for-the-badge&logo=discord&logoColor=white&label=Discord&labelColor=%235865F2
+[discord-link]: https://discord.gg/PqQdhf9VMF
 [Figment]: https://github.com/SergioBenitez/Figment
 [keyring]: https://crates.io/crates/keyring
 [MIT License]: LICENSE
