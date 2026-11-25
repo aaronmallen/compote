@@ -1,5 +1,8 @@
 # Compote
 
+[![Build][build-badge]][build-workflow]
+[![Version][crates-badge]][crates.io]
+[![GitHub Sponsors][sponsor-badge]][sponsor-link]
 [![Discord][discord-badge]][discord-link]
 
 Compote reads your configuration from files and the environment, merges it in the order you choose, and
@@ -156,9 +159,15 @@ parser that is still maintained, but the design is Figment's.
 
 Compote is licensed under the [MIT License]
 
+[build-badge]: https://aaronmallen.dev/aaron/compote/actions/workflows/build.yml/badge.svg?branch=main&style=for-the-badge
+[build-workflow]: https://aaronmallen.dev/aaron/compote/actions?workflow=build.yml
+[crates-badge]: https://img.shields.io/crates/v/compote?style=for-the-badge&logo=rust
+[crates.io]: https://crates.io/crates/compote
 [discord-badge]:
 https://img.shields.io/discord/1441938388780585062?style=for-the-badge&logo=discord&logoColor=white&label=Discord&labelColor=%235865F2
 [discord-link]: https://discord.gg/PqQdhf9VMF
 [Figment]: https://github.com/SergioBenitez/Figment
 [keyring]: https://crates.io/crates/keyring
 [MIT License]: LICENSE
+[sponsor-badge]: https://img.shields.io/github/sponsors/aaronmallen?style=for-the-badge
+[sponsor-link]: https://github.com/sponsors/aaronmallen
